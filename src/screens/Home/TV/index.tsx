@@ -171,7 +171,7 @@ const HomeContent = memo(({ onSelect, onSelectSonglistSource, onSelectLeaderboar
   const songlistSources = songlistState.sources
   const leaderboardSources = boardState.sources
 
-  const subColor = theme['c-font-label'] ?? '#888'
+  const primaryColor = theme['c-primary']
 
   // 动态计算卡片尺寸：
   // 布局：3行（歌单/排行各5列，我的列表1列，补充4个空位保持对齐）
@@ -188,7 +188,7 @@ const HomeContent = memo(({ onSelect, onSelectSonglistSource, onSelectLeaderboar
   const PAD_V = 16        // 上下 padding
   const GAP_H = 14        // 列间距
   const GAP_V = 10        // 行间距
-  const SECTION_TITLE_H = 24  // section title 高度（含 margin）
+  const SECTION_TITLE_H = 28  // section title 高度（含 margin）
   const NUM_COLS = 5
   const NUM_ROWS = 3      // 歌单、排行榜、我的列表
 
@@ -217,7 +217,7 @@ const HomeContent = memo(({ onSelect, onSelectSonglistSource, onSelectLeaderboar
       {layout.width > 0 && (
         <View style={[hc.inner, { paddingHorizontal: PAD_H, paddingVertical: PAD_V }]}>
           {/* 歌单 */}
-          <Text size={13} color={subColor} style={hc.sectionTitle}>歌单</Text>
+          <Text size={16} color={primaryColor} style={hc.sectionTitle}>歌单</Text>
           <View style={[hc.row, { gap: GAP_H, marginBottom: GAP_V }]}>
             {songlistSources.map(src => (
               <SmallCard
@@ -231,7 +231,7 @@ const HomeContent = memo(({ onSelect, onSelectSonglistSource, onSelectLeaderboar
           </View>
 
           {/* 排行榜 */}
-          <Text size={13} color={subColor} style={hc.sectionTitle}>排行榜</Text>
+          <Text size={16} color={primaryColor} style={hc.sectionTitle}>排行榜</Text>
           <View style={[hc.row, { gap: GAP_H, marginBottom: GAP_V }]}>
             {leaderboardSources.map(src => (
               <SmallCard
@@ -245,7 +245,7 @@ const HomeContent = memo(({ onSelect, onSelectSonglistSource, onSelectLeaderboar
           </View>
 
           {/* 我的列表 */}
-          <Text size={13} color={subColor} style={hc.sectionTitle}>我的列表</Text>
+          <Text size={16} color={primaryColor} style={hc.sectionTitle}>我的列表</Text>
           <View style={[hc.row, { gap: GAP_H }]}>
             <SmallCard label="我的列表" color="#1e88e5" cardStyle={cardStyle} onPress={() => onSelect('nav_love')} />
           </View>
@@ -258,7 +258,7 @@ const HomeContent = memo(({ onSelect, onSelectSonglistSource, onSelectLeaderboar
 const hc = StyleSheet.create({
   container: { flex: 1 },
   inner: { flex: 1 },
-  sectionTitle: { marginBottom: 8, fontWeight: '600', letterSpacing: 0.5, height: 20, lineHeight: 20 },
+  sectionTitle: { marginBottom: 8, fontWeight: '600', letterSpacing: 0.5, height: 24, lineHeight: 24 },
   row: { flexDirection: 'row', flexWrap: 'nowrap' },
   cardLabel: { fontWeight: '600', textAlign: 'center', paddingHorizontal: 8 },
 })
