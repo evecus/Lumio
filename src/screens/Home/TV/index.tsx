@@ -51,7 +51,7 @@ interface TopBarProps {
 }
 
 export interface TopBarType {
-  focusSearchBtn: () => void
+  focusPlayBtn: () => void
 }
 
 export const TopBar = memo(forwardRef<TopBarType, TopBarProps>(({ title, onSearchPress, onPlayPress, onSettingPress, onFilterPress, onOpenListPress }, ref) => {
@@ -59,11 +59,11 @@ export const TopBar = memo(forwardRef<TopBarType, TopBarProps>(({ title, onSearc
   const statusBarHeight = useStatusbarHeight()
   const isPlay = useIsPlay()
   const musicInfo = usePlayerMusicInfo()
-  const searchBtnRef = useRef<TVButtonType>(null)
+  const playBtnRef = useRef<TVButtonType>(null)
 
   useImperativeHandle(ref, () => ({
-    focusSearchBtn() {
-      searchBtnRef.current?.requestFocus()
+    focusPlayBtn() {
+      playBtnRef.current?.requestFocus()
     },
   }))
 
@@ -76,9 +76,14 @@ export const TopBar = memo(forwardRef<TopBarType, TopBarProps>(({ title, onSearc
         borderBottomColor: theme['c-border-background'],
       },
     ]}>
-      {/* 左：搜索 */}
-      <TVButton ref={searchBtnRef} style={tb.iconBtn} onPress={onSearchPress} borderRadius={8} onFocus={() => setFocusZone('topbar')}>
-        <Icon name="search-2" size={22} color={theme['c-font']} />
+      {/* 左：播放入口 */}
+      <TVButton ref={playBtnRef} style={tb.playBtn} onPress={onPlayPress} borderRadius={22} onFocus={() => setFocusZone('topbar')}>
+        <View style={[tb.playPic, { backgroundColor: theme['c-border-background'] }]}>
+          {musicInfo.pic
+            ? <Image url={musicInfo.pic} style={tb.playPicImg} />
+            : <Icon name={isPlay ? 'pause' : 'play'} size={20} color={theme['c-primary']} />
+          }
+        </View>
       </TVButton>
 
       {/* 中：标题 + 可选筛选按钮 */}
@@ -98,15 +103,10 @@ export const TopBar = memo(forwardRef<TopBarType, TopBarProps>(({ title, onSearc
         ) : null}
       </View>
 
-      {/* 右：播放入口 + 设置 */}
+      {/* 右：搜索 + 设置 */}
       <View style={tb.right}>
-        <TVButton style={tb.playBtn} onPress={onPlayPress} borderRadius={22} onFocus={() => setFocusZone('topbar')}>
-          <View style={[tb.playPic, { backgroundColor: theme['c-border-background'] }]}>
-            {musicInfo.pic
-              ? <Image url={musicInfo.pic} style={tb.playPicImg} />
-              : <Icon name={isPlay ? 'pause' : 'play'} size={20} color={theme['c-primary']} />
-            }
-          </View>
+        <TVButton style={tb.iconBtn} onPress={onSearchPress} borderRadius={8} onFocus={() => setFocusZone('topbar')}>
+          <Icon name="search-2" size={22} color={theme['c-font']} />
         </TVButton>
         <TVButton style={tb.iconBtn} onPress={onSettingPress} borderRadius={8} onFocus={() => setFocusZone('topbar')}>
           <Icon name="setting" size={22} color={theme['c-font']} />
@@ -137,8 +137,8 @@ const tb = StyleSheet.create({
 
 // ─── 首页列表布局 ─────────────────────────────────────────────────────────────
 
-// 焦点框与卡片内容的间距（与歌单页保持一致）
-const FOCUS_PADDING = 4
+// 焦点框与卡片内容的间距（加大间距使焦点框更明显）
+const FOCUS_PADDING = 8
 
 // 小卡片通用组件
 const SmallCard = memo(({ label, color, cardStyle, onPress }: {
@@ -413,9 +413,9 @@ export default memo(() => {
     // 搜索直接回首页
     if (activeView === 'nav_search') { goHome(); return true }
 
-    // 子面板：内容区焦点 → 顶部栏搜索按钮（一次返回键直达）
+    // 子面板：内容区焦点 → 顶部栏播放入口按钮（一次返回键直达）
     if (activeView !== 'home' && gFocusZone === 'content') {
-      topBarRef.current?.focusSearchBtn()
+      topBarRef.current?.focusPlayBtn()
       setFocusZone('topbar')
       return true
     }
