@@ -2,8 +2,6 @@ import { memo } from 'react'
 
 import Section from '../../components/Section'
 import Source from './Source'
-import SourceName from './SourceName'
-import Language from './Language'
 import IsStartupAutoPlay from './IsStartupAutoPlay'
 import IsStartupPushPlayDetailScreen from './IsStartupPushPlayDetailScreen'
 import IsUseSystemFileSelector from './IsUseSystemFileSelector'
@@ -18,8 +16,6 @@ export default memo(() => {
       <IsStartupAutoPlay />
       <IsStartupPushPlayDetailScreen />
       <IsUseSystemFileSelector />
-      <Language />
-      <SourceName />
       <Source />
     </Section>
   )
