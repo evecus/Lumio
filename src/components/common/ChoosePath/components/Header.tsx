@@ -1,0 +1,134 @@
+import { memo, useCallback, useEffect, useRef } from 'react'
+import { View } from 'react-native'
+import Text from '@/components/common/Text'
+import { Icon } from '@/components/common/Icon'
+import TVButton from '@/components/common/TVButton'
+import { createStyle } from '@/utils/tools'
+import { getExternalStoragePaths, stat } from '@/utils/fs'
+import { useTheme } from '@/store/theme/hook'
+import { scaleSizeH } from '@/utils/pixelRatio'
+import { useStatusbarHeight } from '@/store/common/hook'
+import NewFolderModal, { type NewFolderType } from './NewFolderModal'
+import OpenStorageModal, { type OpenDirModalType } from './OpenStorageModal'
+import type { PathItem } from './ListItem'
+
+
+export default memo(({
+  title,
+  path,
+  onRefreshDir,
+  onOpenDir,
+}: {
+  title: string
+  path: string
+  onRefreshDir: (dir: string) => Promise<PathItem[]>
+  onOpenDir: (dir: string) => Promise<PathItem[]>
+}) => {
+  const theme = useTheme()
+  const newFolderTypeRef = useRef<NewFolderType>(null)
+  const openDirModalTypeRef = useRef<OpenDirModalType>(null)
+  const storagePathsRef = useRef<string[]>([])
+  const statusBarHeight = useStatusbarHeight()
+
+  const checkExternalStoragePath = useCallback(() => {
+    storagePathsRef.current = []
+    void getExternalStoragePaths().then(async(storagePaths) => {
+      for (const path of storagePaths) {
+        try {
+          if (!(await stat(path)).canRead) continue
+        } catch { continue }
+        storagePathsRef.current.push(path)
+      }
+    })
+  }, [])
+  useEffect(() => {
+    checkExternalStoragePath()
+  }, [checkExternalStoragePath])
+
+  const refresh = () => {
+    void onRefreshDir(path)
+    checkExternalStoragePath()
+  }
+
+  const openStorage = () => {
+    openDirModalTypeRef.current?.show(storagePathsRef.current)
+  }
+
+  const handleShowNewFolderModal = () => {
+    newFolderTypeRef.current?.show(path)
+  }
+
+  return (
+    <>
+      <View style={{
+        ...styles.header,
+        height: scaleSizeH(50) + statusBarHeight,
+        paddingTop: statusBarHeight,
+        backgroundColor: theme['c-content-background'],
+      }} onStartShouldSetResponder={() => true}>
+        <View style={styles.titleContent}>
+          <Text color={theme['c-primary-font']} numberOfLines={1}>{title}</Text>
+          <Text style={styles.subTitle} color={theme['c-primary-font']} size={13} numberOfLines={1}>{path}</Text>
+        </View>
+        <View style={styles.actions}>
+          <TVButton
+            style={styles.actionBtn}
+            onPress={openStorage}
+          >
+            <Icon name="sd-card" color={theme['c-primary-font']} size={22} />
+          </TVButton>
+          <TVButton
+            style={styles.actionBtn}
+            onPress={handleShowNewFolderModal}
+          >
+            <Icon name="add_folder" color={theme['c-primary-font']} size={22} />
+          </TVButton>
+          <TVButton
+            style={styles.actionBtn}
+            onPress={refresh}
+          >
+            <Icon name="available_updates" color={theme['c-primary-font']} size={22} />
+          </TVButton>
+        </View>
+      </View>
+      <OpenStorageModal ref={openDirModalTypeRef} onOpenDir={onOpenDir} />
+      <NewFolderModal ref={newFolderTypeRef} onRefreshDir={onRefreshDir} />
+    </>
+  )
+})
+
+const styles = createStyle({
+  header: {
+    flexGrow: 0,
+    flexShrink: 0,
+    flexDirection: 'row',
+    paddingLeft: 15,
+    paddingRight: 15,
+    alignItems: 'center',
+    elevation: 2,
+    zIndex: 2,
+  },
+  titleContent: {
+    flexGrow: 1,
+    flexShrink: 1,
+  },
+  subTitle: {
+    paddingTop: 1,
+  },
+  actions: {
+    flexDirection: 'row',
+  },
+  actionBtn: {
+    paddingTop: 10,
+    paddingBottom: 10,
+    paddingLeft: 8,
+    paddingRight: 8,
+    marginLeft: 8,
+    borderRadius: 6,
+    overflow: 'hidden',
+    justifyContent: 'center',
+    alignItems: 'center',
+    minWidth: 44,
+    minHeight: 44,
+  },
+})
