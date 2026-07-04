@@ -76,13 +76,18 @@ export const TopBar = memo(forwardRef<TopBarType, TopBarProps>(({ title, onSearc
         borderBottomColor: theme['c-border-background'],
       },
     ]}>
-      {/* 左：播放入口 */}
+      {/* 左：播放入口 + 歌曲名（有歌曲时显示） */}
       <TVButton ref={playBtnRef} style={tb.playBtn} onPress={onPlayPress} borderRadius={22} onFocus={() => setFocusZone('topbar')}>
-        <View style={[tb.playPic, { backgroundColor: theme['c-border-background'] }]}>
-          {musicInfo.pic
-            ? <Image url={musicInfo.pic} style={tb.playPicImg} />
-            : <Icon name={isPlay ? 'pause' : 'play'} size={20} color={theme['c-primary']} />
-          }
+        <View style={tb.playLeft}>
+          <View style={[tb.playPic, { backgroundColor: theme['c-border-background'] }]}>
+            {musicInfo.pic
+              ? <Image url={musicInfo.pic} style={tb.playPicImg} />
+              : <Icon name={isPlay ? 'pause' : 'play'} size={20} color={theme['c-primary']} />
+            }
+          </View>
+          {musicInfo.name ? (
+            <Text size={13} color="#222" style={tb.songName} numberOfLines={1} ellipsizeMode="tail">{musicInfo.name}</Text>
+          ) : null}
         </View>
       </TVButton>
 
@@ -131,8 +136,10 @@ const tb = StyleSheet.create({
   right: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   iconBtn: { padding: 8, borderRadius: 8 },
   playBtn: { padding: 4, borderRadius: 22 },
+  playLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   playPic: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
   playPicImg: { width: 40, height: 40, borderRadius: 20 },
+  songName: { maxWidth: 80, fontWeight: '500' },
 })
 
 // ─── 首页列表布局 ─────────────────────────────────────────────────────────────
