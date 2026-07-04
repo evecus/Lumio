@@ -60,9 +60,14 @@ const DetailTopBar = ({
         borderBottomColor: theme['c-border-background'],
       },
     ]}>
-      {/* 左：搜索 */}
-      <TVButton style={tb.iconBtn} onPress={onSearchPress} borderRadius={8}>
-        <Icon name="search-2" size={22} color={theme['c-font']} />
+      {/* 左：播放入口 */}
+      <TVButton style={tb.playBtn} onPress={onPlayPress} borderRadius={22}>
+        <View style={[tb.playPic, { backgroundColor: theme['c-border-background'] }]}>
+          {musicInfo.pic
+            ? <Image url={musicInfo.pic} style={tb.playPicImg} />
+            : <Icon name={isPlay ? 'pause' : 'play'} size={20} color={theme['c-primary']} />
+          }
+        </View>
       </TVButton>
 
       {/* 中：标题 + 爱心（仅歌单） */}
@@ -79,15 +84,10 @@ const DetailTopBar = ({
         )}
       </View>
 
-      {/* 右：播放入口 + 设置 */}
+      {/* 右：搜索 + 设置 */}
       <View style={tb.right}>
-        <TVButton style={tb.playBtn} onPress={onPlayPress} borderRadius={22}>
-          <View style={[tb.playPic, { backgroundColor: theme['c-border-background'] }]}>
-            {musicInfo.pic
-              ? <Image url={musicInfo.pic} style={tb.playPicImg} />
-              : <Icon name={isPlay ? 'pause' : 'play'} size={20} color={theme['c-primary']} />
-            }
-          </View>
+        <TVButton style={tb.iconBtn} onPress={onSearchPress} borderRadius={8}>
+          <Icon name="search-2" size={22} color={theme['c-font']} />
         </TVButton>
         <TVButton style={tb.iconBtn} onPress={onSettingPress} borderRadius={8}>
           <Icon name="setting" size={22} color={theme['c-font']} />
