@@ -111,10 +111,16 @@ export const TopBar = memo(forwardRef<TopBarType, TopBarProps>(({ title, onSearc
       {/* 右：搜索 + 设置 */}
       <View style={tb.right}>
         <TVButton style={tb.iconBtn} onPress={onSearchPress} borderRadius={8} onFocus={() => setFocusZone('topbar')}>
-          <Icon name="search-2" size={22} color={theme['c-font']} />
+          <View style={tb.iconWithLabel}>
+            <Icon name="search-2" size={22} color={theme['c-font']} />
+            <Text size={13} color="#111" style={tb.iconLabel}>搜索</Text>
+          </View>
         </TVButton>
         <TVButton style={tb.iconBtn} onPress={onSettingPress} borderRadius={8} onFocus={() => setFocusZone('topbar')}>
-          <Icon name="setting" size={22} color={theme['c-font']} />
+          <View style={tb.iconWithLabel}>
+            <Icon name="setting" size={22} color={theme['c-font']} />
+            <Text size={13} color="#111" style={tb.iconLabel}>设置</Text>
+          </View>
         </TVButton>
       </View>
     </View>
@@ -139,7 +145,9 @@ const tb = StyleSheet.create({
   playLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   playPic: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
   playPicImg: { width: 40, height: 40, borderRadius: 20 },
-  songName: { maxWidth: 80, fontWeight: '500' },
+  songName: { maxWidth: 130, fontWeight: '500' },
+  iconWithLabel: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  iconLabel: { fontWeight: '500' },
 })
 
 // ─── 首页列表布局 ─────────────────────────────────────────────────────────────
