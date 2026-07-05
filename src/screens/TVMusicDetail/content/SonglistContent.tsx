@@ -37,6 +37,8 @@ export default forwardRef<SonglistContentType, Props>(({ id, source, name }, ref
   const listMusicMultiAddRef = useRef<MusicMultiAddModalType>(null)
   const isUnmountedRef = useRef(false)
   const loadedIdRef = useRef('')
+  // 记录已向远程请求到第几页（每页30首），与TV本地切片页码无关
+  const remotePageRef = useRef(1)
 
   useImperativeHandle(ref, () => ({
     collect() {
@@ -49,17 +51,18 @@ export default forwardRef<SonglistContentType, Props>(({ id, source, name }, ref
     isUnmountedRef.current = false
     if (loadedIdRef.current === id) return
     loadedIdRef.current = id
+    remotePageRef.current = 1
 
     setListDetailInfo(source, id)
     listRef.current?.setStatus('loading')
     listRef.current?.setList([])
 
-    const page = 1
-    getListDetail(id, source, page).then(detail => {
+    getListDetail(id, source, 1).then(detail => {
       if (isUnmountedRef.current) return
-      const result = setListDetail(detail, id, page)
+      const result = setListDetail(detail, id, 1)
+      remotePageRef.current = 1
       listRef.current?.setList(result.list)
-      listRef.current?.setStatus(songlistState.listDetailInfo.maxPage <= page ? 'end' : 'idle')
+      listRef.current?.setStatus(songlistState.listDetailInfo.maxPage <= 1 ? 'end' : 'idle')
     }).catch(() => {
       clearListDetail()
       listRef.current?.setStatus('error')
@@ -72,13 +75,16 @@ export default forwardRef<SonglistContentType, Props>(({ id, source, name }, ref
   const handleLoadMore = () => {
     const info = songlistState.listDetailInfo
     if (!info.list.length) return
-    const page = info.page + 1
+    // 用远程页码 ref，而不是 store 的 page（store.page 是TV本地切片页码）
+    const nextRemotePage = remotePageRef.current + 1
+    if (nextRemotePage > info.maxPage) return
     listRef.current?.setStatus('loading')
-    getListDetail(id, source, page).then(detail => {
+    getListDetail(id, source, nextRemotePage).then(detail => {
       if (isUnmountedRef.current) return
-      const result = setListDetail(detail, id, page)
+      const result = setListDetail(detail, id, nextRemotePage)
+      remotePageRef.current = nextRemotePage
       listRef.current?.appendList(result.list)
-      listRef.current?.setStatus(songlistState.listDetailInfo.maxPage <= page ? 'end' : 'idle')
+      listRef.current?.setStatus(songlistState.listDetailInfo.maxPage <= nextRemotePage ? 'end' : 'idle')
     }).catch(() => {
       listRef.current?.setStatus('error')
     })
