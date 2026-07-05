@@ -7,17 +7,15 @@ import {
   OnlineMusicList,
   type OnlineMusicListType,
 } from '../TVMusicList'
-import { getListDetail, setListDetailInfo, setListDetail, clearListDetail } from '@/core/leaderboard'
+import { getListDetail, getListDetailDirect, setListDetailInfo, setListDetail, clearListDetail } from '@/core/leaderboard'
 import boardState from '@/store/leaderboard/state'
 import { handlePlay } from '@/screens/Home/Views/Leaderboard/listAction'
-// 复用 OnlineList 的菜单组件
 import ListMenu, { type ListMenuType } from '@/components/OnlineList/ListMenu'
 import ListMusicAdd, { type MusicAddModalType } from '@/components/MusicAddModal'
 import ListMusicMultiAdd, { type MusicMultiAddModalType } from '@/components/MusicMultiAddModal'
 import { handlePlayLater, handleDislikeMusic } from '@/components/OnlineList/listAction'
 
 export interface LeaderboardContentType {
-  // 没有额外对外方法，占位
   _type: 'leaderboard'
 }
 
@@ -33,8 +31,9 @@ export default forwardRef<LeaderboardContentType, Props>(({ id, source }, ref) =
   const listMusicMultiAddRef = useRef<MusicMultiAddModalType>(null)
   const isUnmountedRef = useRef(false)
   const loadedIdRef = useRef('')
-  // 记录已向远程请求到第几页（每页N首），与TV本地切片页码无关
+  // 远程API已请求的页码，与TV本地10首/页切片无关
   const remotePageRef = useRef(1)
+  const maxRemotePageRef = useRef(1)
 
   useImperativeHandle(ref, () => ({ _type: 'leaderboard' }))
 
@@ -51,9 +50,10 @@ export default forwardRef<LeaderboardContentType, Props>(({ id, source }, ref) =
     getListDetail(id, 1).then(detail => {
       if (isUnmountedRef.current) return
       const result = setListDetail(detail, id, 1)
+      maxRemotePageRef.current = detail.maxPage
       remotePageRef.current = 1
       listRef.current?.setList(result.list)
-      listRef.current?.setStatus(boardState.listDetailInfo.maxPage <= 1 ? 'end' : 'idle')
+      listRef.current?.setStatus(detail.maxPage <= 1 ? 'end' : 'idle')
     }).catch(() => {
       clearListDetail()
       listRef.current?.setStatus('error')
@@ -64,18 +64,15 @@ export default forwardRef<LeaderboardContentType, Props>(({ id, source }, ref) =
   }, [id])
 
   const handleLoadMore = () => {
-    const info = boardState.listDetailInfo
-    if (!info.list.length) return
-    // 用远程页码 ref，而不是 store 的 page
     const nextRemotePage = remotePageRef.current + 1
-    if (nextRemotePage > info.maxPage) return
+    if (nextRemotePage > maxRemotePageRef.current) return
     listRef.current?.setStatus('loading')
-    getListDetail(id, nextRemotePage).then(detail => {
+    // 直接用远程页码请求，绕开有问题的缓存分页链
+    getListDetailDirect(id, nextRemotePage).then(detail => {
       if (isUnmountedRef.current) return
-      const result = setListDetail(detail, id, nextRemotePage)
       remotePageRef.current = nextRemotePage
-      listRef.current?.appendList(result.list)
-      listRef.current?.setStatus(boardState.listDetailInfo.maxPage <= nextRemotePage ? 'end' : 'idle')
+      listRef.current?.appendList(detail.list)
+      listRef.current?.setStatus(maxRemotePageRef.current <= nextRemotePage ? 'end' : 'idle')
     }).catch(() => {
       listRef.current?.setStatus('error')
     })
