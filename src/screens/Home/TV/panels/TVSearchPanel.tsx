@@ -273,22 +273,32 @@ export default memo(forwardRef<TVSearchPanelType>((_, ref) => {
             </View>
           ))}
 
-          {/* 删除 | 清空 | 取消 — 三等分 */}
+          {/* 第一行：删除 | 清空 */}
           <View style={[s.keyRow, { marginTop: 4 }]}>
             <TVButton
-              style={[s.keyThird, { backgroundColor: bg, borderColor: border, borderWidth: 1 }]}
+              style={[s.keyHalf, { backgroundColor: bg, borderColor: border, borderWidth: 1 }]}
               onPress={backspace}
               onFocus={() => setFocusZone('topbar')}>
               <Text size={16}>删除</Text>
             </TVButton>
             <TVButton
-              style={[s.keyThird, { backgroundColor: bg, borderColor: border, borderWidth: 1 }]}
+              style={[s.keyHalf, { backgroundColor: bg, borderColor: border, borderWidth: 1 }]}
               onPress={clear}
               onFocus={() => setFocusZone('topbar')}>
               <Text size={16}>清空</Text>
             </TVButton>
+          </View>
+
+          {/* 第二行：搜索 | 取消 */}
+          <View style={s.keyRow}>
             <TVButton
-              style={[s.keyThird, { backgroundColor: bg, borderColor: border, borderWidth: 1 }]}
+              style={[s.keyHalf, { backgroundColor: bg, borderColor: primary, borderWidth: 1.5 }]}
+              onPress={() => doSearch(input)}
+              onFocus={() => setFocusZone('topbar')}>
+              <Text size={16} color={primary} style={{ fontWeight: '600' }}>搜索</Text>
+            </TVButton>
+            <TVButton
+              style={[s.keyHalf, { backgroundColor: bg, borderColor: border, borderWidth: 1 }]}
               onPress={cancelSearch}
               onFocus={() => setFocusZone('topbar')}>
               <Text size={16}>取消</Text>
@@ -381,7 +391,7 @@ const s = StyleSheet.create({
   },
   keyRow: { flexDirection: 'row', gap: 5 },
   key: { flex: 1, height: KEY_H, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
-  keyThird: { flex: 1, height: KEY_H, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  keyHalf: { flex: 1, height: KEY_H, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
   keyText: { textTransform: 'uppercase' },
 
   // 中栏 — 搜索建议
