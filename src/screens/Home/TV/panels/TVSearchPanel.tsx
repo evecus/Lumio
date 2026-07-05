@@ -66,6 +66,8 @@ export default memo(forwardRef<TVSearchPanelType>((_, ref) => {
   const isActiveRef    = useRef(false)
   const firstKeyRef    = useRef<TVButtonType>(null)
   const sources        = searchMusicState.sources
+  // 用于取消正在进行的搜索请求
+  const cancelSearchRef = useRef<(() => void) | null>(null)
 
   // 把焦点还给键盘第一个键（供父组件调用）
   useImperativeHandle(ref, () => ({
@@ -141,22 +143,35 @@ export default memo(forwardRef<TVSearchPanelType>((_, ref) => {
     setTipList([])
   }, [])
 
-  // ── 实际搜索（点击建议词 or 外部调用） ───────────────────────────────────
+  // ── 取消当前搜索 ──────────────────────────────────────────────────────────
+  const cancelSearch = useCallback(() => {
+    if (cancelSearchRef.current) {
+      cancelSearchRef.current()
+      cancelSearchRef.current = null
+    }
+    listRef.current?.setStatus('idle')
+  }, [])
+
+  // ── 实际搜索（点击建议词） ────────────────────────────────────────────────
   const doSearch = useCallback((text: string) => {
     const keyword = text.trim()
     if (!keyword) return
+    if (cancelSearchRef.current) { cancelSearchRef.current(); cancelSearchRef.current = null }
+    let cancelled = false
+    cancelSearchRef.current = () => { cancelled = true }
     void addHistoryWord(keyword)
     searchInfoRef.current.text = keyword
     listRef.current?.setList([], false, false)
     listRef.current?.setStatus('loading')
     search(keyword, 1, searchInfoRef.current.source)
       .then(list => {
-        if (!isActiveRef.current) return
+        if (cancelled || !isActiveRef.current) return
+        cancelSearchRef.current = null
         listRef.current?.setList(list, false, false)
         const info = searchMusicState.listInfos[searchInfoRef.current.source]!
         listRef.current?.setStatus(info.maxPage <= 1 ? 'end' : 'idle')
       })
-      .catch(() => { listRef.current?.setStatus('error') })
+      .catch(() => { if (!cancelled) listRef.current?.setStatus('error') })
   }, [])
 
   // ── 点击建议词 ────────────────────────────────────────────────────────────
@@ -197,7 +212,7 @@ export default memo(forwardRef<TVSearchPanelType>((_, ref) => {
   const primary = theme['c-primary'] ?? '#1aad19'
   const fontLabel = theme['c-font-label']
 
-  // ── 渲染建议词条目 ────────────────────────────────────────────────────────
+  // ── 渲染建议词条目（只显示文字，无图标） ─────────────────────────────────
   const renderTipItem = useCallback(({ item, index }: { item: string; index: number }) => (
     <TVButton
       key={index}
@@ -205,10 +220,9 @@ export default memo(forwardRef<TVSearchPanelType>((_, ref) => {
       onPress={() => handleTipPress(item)}
       onFocus={() => setFocusZone('topbar')}
     >
-      <Icon name="search-2" size={13} color={fontLabel} style={s.tipIcon} />
       <Text numberOfLines={1} size={15} style={s.tipText}>{item}</Text>
     </TVButton>
-  ), [border, fontLabel, handleTipPress])
+  ), [border, handleTipPress])
 
   // ─────────────────────────────────────────────────────────────────────────
   return (
@@ -226,7 +240,7 @@ export default memo(forwardRef<TVSearchPanelType>((_, ref) => {
             </Text>
           </View>
 
-          {/* 平台选择栏 */}
+          {/* 平台选择栏 — 单行，内容多时可横向滚动 */}
           <View style={[s.sourceBar, { borderColor: border }]}>
             {sources.map(src => {
               const active = src === activeSource
@@ -259,19 +273,25 @@ export default memo(forwardRef<TVSearchPanelType>((_, ref) => {
             </View>
           ))}
 
-          {/* 删除 + 清空（无搜索按钮） */}
+          {/* 删除 | 清空 | 取消 — 三等分 */}
           <View style={[s.keyRow, { marginTop: 4 }]}>
             <TVButton
-              style={[s.keyHalf, { backgroundColor: bg, borderColor: border, borderWidth: 1 }]}
+              style={[s.keyThird, { backgroundColor: bg, borderColor: border, borderWidth: 1 }]}
               onPress={backspace}
               onFocus={() => setFocusZone('topbar')}>
               <Text size={16}>删除</Text>
             </TVButton>
             <TVButton
-              style={[s.keyHalf, { backgroundColor: bg, borderColor: border, borderWidth: 1 }]}
+              style={[s.keyThird, { backgroundColor: bg, borderColor: border, borderWidth: 1 }]}
               onPress={clear}
               onFocus={() => setFocusZone('topbar')}>
               <Text size={16}>清空</Text>
+            </TVButton>
+            <TVButton
+              style={[s.keyThird, { backgroundColor: bg, borderColor: border, borderWidth: 1 }]}
+              onPress={cancelSearch}
+              onFocus={() => setFocusZone('topbar')}>
+              <Text size={16}>取消</Text>
             </TVButton>
           </View>
 
@@ -323,7 +343,7 @@ const s = StyleSheet.create({
 
   // 左栏 — 键盘
   keyboardWrap: {
-    width: 420,
+    width: 460,
     flexShrink: 0,
     borderRightWidth: StyleSheet.hairlineWidth,
     paddingHorizontal: 14,
@@ -361,12 +381,12 @@ const s = StyleSheet.create({
   },
   keyRow: { flexDirection: 'row', gap: 5 },
   key: { flex: 1, height: KEY_H, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
-  keyHalf: { flex: 1, height: KEY_H, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
+  keyThird: { flex: 1, height: KEY_H, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
   keyText: { textTransform: 'uppercase' },
 
   // 中栏 — 搜索建议
   tipWrap: {
-    width: 200,
+    width: 180,
     flexShrink: 0,
     borderRightWidth: StyleSheet.hairlineWidth,
   },
@@ -382,9 +402,7 @@ const s = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    gap: 6,
   },
-  tipIcon: { flexShrink: 0 },
   tipText: { flex: 1 },
   tipEmpty: {
     flex: 1,
