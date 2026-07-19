@@ -182,15 +182,3 @@ export const getListDetailAll = async(id: string, isRefresh = false): Promise<LX
 //   })
 // }
 
-/**
- * 直接按远程页码请求排行榜歌曲，绕开本地分页缓存链
- * 专供 TV 端 LeaderboardContent 的 loadMore 使用
- */
-export const getListDetailDirect = async(id: string, remotePage: number): Promise<ListDetailInfo> => {
-  const [source, bangId] = id.split('__') as [LX.OnlineSource, string]
-  return (musicSdk[source]?.leaderboard.getList(bangId, remotePage) as Promise<ListDetailInfo>)
-    .then(result => {
-      result.list = deduplicationList(result.list.map(m => toNewMusicInfo(m)) as LX.Music.MusicInfoOnline[])
-      return result
-    })
-}

@@ -220,14 +220,3 @@ export const getListDetailAll = async(source: LX.OnlineSource, id: string, isRef
   }).then(list => deduplicationList(list))
 }
 
-/**
- * 直接按远程页码请求歌单歌曲，绕开本地分页缓存链
- * 专供 TV 端 SonglistContent 的 loadMore 使用
- */
-export const getListDetailDirect = async(id: string, source: LX.OnlineSource, remotePage: number): Promise<ListDetailInfo> => {
-  return (musicSdk[source]?.songList.getListDetail(id, remotePage) as Promise<ListDetailInfo>)
-    .then(result => {
-      result.list = deduplicationList(result.list.map(m => toNewMusicInfo(m)) as LX.Music.MusicInfoOnline[])
-      return result
-    })
-}

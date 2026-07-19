@@ -9,7 +9,6 @@ import {
 } from '../TVMusicList'
 import {
   getListDetail,
-  getListDetailDirect,
   setListDetailInfo,
   setListDetail,
   clearListDetail,
@@ -38,7 +37,8 @@ export default forwardRef<SonglistContentType, Props>(({ id, source, name }, ref
   const listMusicMultiAddRef = useRef<MusicMultiAddModalType>(null)
   const isUnmountedRef = useRef(false)
   const loadedIdRef = useRef('')
-  // 远程API已请求的页码（每页约30首），与TV本地10首/页切片无关
+  // 本地按30首切分后的分页页码（getListDetail 内部已按各源真实分页方式统一处理），
+  // 与 TV 本地10首/页的展示切片无关
   const remotePageRef = useRef(1)
   const maxRemotePageRef = useRef(1)
 
@@ -62,11 +62,11 @@ export default forwardRef<SonglistContentType, Props>(({ id, source, name }, ref
     getListDetail(id, source, 1).then(detail => {
       if (isUnmountedRef.current) return
       const result = setListDetail(detail, id, 1)
-      // 记录远程总页数
-      maxRemotePageRef.current = detail.maxPage
+      // 记录本地总页数（每页30首）
+      maxRemotePageRef.current = result.maxPage
       remotePageRef.current = 1
       listRef.current?.setList(result.list)
-      listRef.current?.setStatus(detail.maxPage <= 1 ? 'end' : 'idle')
+      listRef.current?.setStatus(result.maxPage <= 1 ? 'end' : 'idle')
     }).catch(() => {
       clearListDetail()
       listRef.current?.setStatus('error')
@@ -77,15 +77,18 @@ export default forwardRef<SonglistContentType, Props>(({ id, source, name }, ref
   }, [id])
 
   const handleLoadMore = () => {
-    const nextRemotePage = remotePageRef.current + 1
-    if (nextRemotePage > maxRemotePageRef.current) return
+    const nextPage = remotePageRef.current + 1
+    if (nextPage > maxRemotePageRef.current) return
     listRef.current?.setStatus('loading')
-    // 直接用远程页码请求，绕开有问题的缓存分页链
-    getListDetailDirect(id, source, nextRemotePage).then(detail => {
+    // 使用本地按30首分页的缓存链（与各源真实分页方式无关），并写回 store，
+    // 保证 songlistState.listDetailInfo.list 与页面上累积的列表保持一致
+    getListDetail(id, source, nextPage).then(detail => {
       if (isUnmountedRef.current) return
-      remotePageRef.current = nextRemotePage
+      const result = setListDetail(detail, id, nextPage)
+      maxRemotePageRef.current = result.maxPage
+      remotePageRef.current = nextPage
       listRef.current?.appendList(detail.list)
-      listRef.current?.setStatus(maxRemotePageRef.current <= nextRemotePage ? 'end' : 'idle')
+      listRef.current?.setStatus(result.maxPage <= nextPage ? 'end' : 'idle')
     }).catch(() => {
       listRef.current?.setStatus('error')
     })

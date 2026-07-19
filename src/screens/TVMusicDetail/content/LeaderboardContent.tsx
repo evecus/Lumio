@@ -7,7 +7,7 @@ import {
   OnlineMusicList,
   type OnlineMusicListType,
 } from '../TVMusicList'
-import { getListDetail, getListDetailDirect, setListDetailInfo, setListDetail, clearListDetail } from '@/core/leaderboard'
+import { getListDetail, setListDetailInfo, setListDetail, clearListDetail } from '@/core/leaderboard'
 import boardState from '@/store/leaderboard/state'
 import { handlePlay } from '@/screens/Home/Views/Leaderboard/listAction'
 import ListMenu, { type ListMenuType } from '@/components/OnlineList/ListMenu'
@@ -31,7 +31,8 @@ export default forwardRef<LeaderboardContentType, Props>(({ id, source }, ref) =
   const listMusicMultiAddRef = useRef<MusicMultiAddModalType>(null)
   const isUnmountedRef = useRef(false)
   const loadedIdRef = useRef('')
-  // 远程API已请求的页码，与TV本地10首/页切片无关
+  // 本地按30首切分后的分页页码（getListDetail 内部已按各源真实分页方式统一处理），
+  // 与 TV 本地10首/页的展示切片无关
   const remotePageRef = useRef(1)
   const maxRemotePageRef = useRef(1)
 
@@ -50,10 +51,10 @@ export default forwardRef<LeaderboardContentType, Props>(({ id, source }, ref) =
     getListDetail(id, 1).then(detail => {
       if (isUnmountedRef.current) return
       const result = setListDetail(detail, id, 1)
-      maxRemotePageRef.current = detail.maxPage
+      maxRemotePageRef.current = result.maxPage
       remotePageRef.current = 1
       listRef.current?.setList(result.list)
-      listRef.current?.setStatus(detail.maxPage <= 1 ? 'end' : 'idle')
+      listRef.current?.setStatus(result.maxPage <= 1 ? 'end' : 'idle')
     }).catch(() => {
       clearListDetail()
       listRef.current?.setStatus('error')
@@ -64,15 +65,18 @@ export default forwardRef<LeaderboardContentType, Props>(({ id, source }, ref) =
   }, [id])
 
   const handleLoadMore = () => {
-    const nextRemotePage = remotePageRef.current + 1
-    if (nextRemotePage > maxRemotePageRef.current) return
+    const nextPage = remotePageRef.current + 1
+    if (nextPage > maxRemotePageRef.current) return
     listRef.current?.setStatus('loading')
-    // 直接用远程页码请求，绕开有问题的缓存分页链
-    getListDetailDirect(id, nextRemotePage).then(detail => {
+    // 使用本地按30首分页的缓存链（与各源真实分页方式无关），并写回 store，
+    // 保证 boardState.listDetailInfo.list 与页面上累积的列表保持一致
+    getListDetail(id, nextPage).then(detail => {
       if (isUnmountedRef.current) return
-      remotePageRef.current = nextRemotePage
+      const result = setListDetail(detail, id, nextPage)
+      maxRemotePageRef.current = result.maxPage
+      remotePageRef.current = nextPage
       listRef.current?.appendList(detail.list)
-      listRef.current?.setStatus(maxRemotePageRef.current <= nextRemotePage ? 'end' : 'idle')
+      listRef.current?.setStatus(result.maxPage <= nextPage ? 'end' : 'idle')
     }).catch(() => {
       listRef.current?.setStatus('error')
     })
