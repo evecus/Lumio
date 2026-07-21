@@ -8,11 +8,12 @@
  * - 尺寸由 style 控制，wrap_content 不撑开父布局
  * - requestFocus()：主动将焦点推给此 TvFocusView（需原生 Manager 注册 requestFocus command）
  */
-import { useRef, useImperativeHandle, forwardRef, useState } from 'react'
+import { useRef, useImperativeHandle, forwardRef, useState, useEffect } from 'react'
 import {
   requireNativeComponent,
   UIManager,
   findNodeHandle,
+  Animated,
   type ViewProps,
   type View as ViewType,
 } from 'react-native'
@@ -31,6 +32,11 @@ const TvFocusView = requireNativeComponent<{
   lockHorizontal?: boolean
   children?: React.ReactNode
 }>('TvFocusView')
+const AnimatedTvFocusView = Animated.createAnimatedComponent(TvFocusView)
+
+// 聚焦时的缩放倍数，轻微放大以增强焦点辨识度
+const FOCUS_SCALE = 1.05
+const FOCUS_SCALE_DURATION = 120
 
 interface Props {
   onPress?: () => void
@@ -95,6 +101,7 @@ export default forwardRef<TVButtonType, Props>((((({
   const viewRef = useRef<ViewType>(null)
   const { focusColor, bgColor } = useFocusColor()
   const [isFocused, setIsFocused] = useState(false)
+  const scale = useRef(new Animated.Value(1)).current
 
   useImperativeHandle(ref, () => ({
     measure(callback) {
@@ -113,6 +120,14 @@ export default forwardRef<TVButtonType, Props>((((({
     },
   }))
 
+  useEffect(() => {
+    Animated.timing(scale, {
+      toValue: isFocused ? FOCUS_SCALE : 1,
+      duration: FOCUS_SCALE_DURATION,
+      useNativeDriver: true,
+    }).start()
+  }, [isFocused, scale])
+
   const handleFocus = () => {
     setIsFocused(true)
     onFocus?.()
@@ -124,19 +139,19 @@ export default forwardRef<TVButtonType, Props>((((({
   }
 
   return (
-    <TvFocusView
+    <AnimatedTvFocusView
       onPress={disabled ? undefined : onPress}
-      onDirection={onDirection ? (e) => onDirection(e.nativeEvent.direction) : undefined}
+      onDirection={onDirection ? (e: { nativeEvent: { direction: 'left' | 'right' } }) => onDirection(e.nativeEvent.direction) : undefined}
       onFocus={handleFocus}
       onBlur={handleBlur}
       hasTVPreferredFocus={hasTVPreferredFocus}
       lockHorizontal={lockHorizontal}
       borderRadius={borderRadius}
       focusColor={focusColor}
-      style={[{ opacity: disabled ? 0.3 : 1 }, isFocused && { backgroundColor: bgColor }, style]}
+      style={[{ opacity: disabled ? 0.3 : 1 }, isFocused && { backgroundColor: bgColor }, { transform: [{ scale }] }, style]}
       ref={viewRef as any}
     >
       {children}
-    </TvFocusView>
+    </AnimatedTvFocusView>
   )
 }) as any)))
