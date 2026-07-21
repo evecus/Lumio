@@ -20,6 +20,7 @@ import { navigations } from '@/navigation'
 import commonState from '@/store/common/state'
 import type { InitState } from '@/store/common/state'
 import Text from '@/components/common/Text'
+import MarqueeText from '@/components/common/MarqueeText'
 import songlistState, { type Source } from '@/store/songlist/state'
 import boardState from '@/store/leaderboard/state'
 import { useSourceLabel } from '@/utils/hooks/useSourceLabel'
@@ -86,7 +87,12 @@ export const TopBar = memo(forwardRef<TopBarType, TopBarProps>(({ title, onSearc
             }
           </View>
           {musicInfo.name ? (
-            <Text size={13} color="#222" style={tb.songName} numberOfLines={1} ellipsizeMode="tail">{musicInfo.name}</Text>
+            <MarqueeText
+              size={13}
+              color="#222"
+              style={tb.songName}
+              width={220}
+            >{musicInfo.singer ? `${musicInfo.name} - ${musicInfo.singer}` : musicInfo.name}</MarqueeText>
           ) : null}
         </View>
       </TVButton>
@@ -145,7 +151,7 @@ const tb = StyleSheet.create({
   playLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   playPic: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
   playPicImg: { width: 40, height: 40, borderRadius: 20 },
-  songName: { maxWidth: 130, fontWeight: '500' },
+  songName: { fontWeight: '500' },
   iconWithLabel: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   iconLabel: { fontWeight: '500' },
 })
