@@ -233,5 +233,5 @@ export default ({ componentId, params }: { componentId: string; params: TVMusicD
 
 const styles = StyleSheet.create({
   root: { flex: 1, flexDirection: 'column' },
-  content: { flex: 1, paddingHorizontal: 12 },
+  content: { flex: 1, paddingHorizontal: 24 },
 })
