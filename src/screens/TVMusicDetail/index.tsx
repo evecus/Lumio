@@ -12,6 +12,7 @@ import { useTheme } from '@/store/theme/hook'
 import { useStatusbarHeight } from '@/store/common/hook'
 import { useIsPlay, usePlayerMusicInfo } from '@/store/player/hook'
 import Text from '@/components/common/Text'
+import MarqueeText from '@/components/common/MarqueeText'
 import { Icon } from '@/components/common/Icon'
 import Image from '@/components/common/Image'
 import TVButton from '@/components/common/TVButton'
@@ -70,7 +71,12 @@ const DetailTopBar = ({
             }
           </View>
           {musicInfo.name ? (
-            <Text size={13} color="#222" style={tb.songName} numberOfLines={1} ellipsizeMode="tail">{musicInfo.name}</Text>
+            <MarqueeText
+              size={13}
+              color="#222"
+              style={tb.songName}
+              width={220}
+            >{musicInfo.singer ? `${musicInfo.name} - ${musicInfo.singer}` : musicInfo.name}</MarqueeText>
           ) : null}
         </View>
       </TVButton>
@@ -133,7 +139,7 @@ const tb = StyleSheet.create({
   playLeft: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   playPic: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
   playPicImg: { width: 40, height: 40, borderRadius: 20 },
-  songName: { maxWidth: 130, fontWeight: '500' },
+  songName: { fontWeight: '500' },
   iconWithLabel: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   iconLabel: { fontWeight: '500' },
 })
@@ -227,5 +233,5 @@ export default ({ componentId, params }: { componentId: string; params: TVMusicD
 
 const styles = StyleSheet.create({
   root: { flex: 1, flexDirection: 'column' },
-  content: { flex: 1 },
+  content: { flex: 1, paddingHorizontal: 12 },
 })

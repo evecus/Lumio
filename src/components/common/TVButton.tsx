@@ -148,7 +148,14 @@ export default forwardRef<TVButtonType, Props>((((({
       lockHorizontal={lockHorizontal}
       borderRadius={borderRadius}
       focusColor={focusColor}
-      style={[{ opacity: disabled ? 0.3 : 1 }, isFocused && { backgroundColor: bgColor }, { transform: [{ scale }] }, style]}
+      style={[
+        { opacity: disabled ? 0.3 : 1 },
+        isFocused && { backgroundColor: bgColor },
+        { transform: [{ scale }] },
+        // 聚焦时提升层级，避免放大后的焦点框被相邻元素遮挡
+        isFocused && { zIndex: 10, elevation: 10 },
+        style,
+      ]}
       ref={viewRef as any}
     >
       {children}
