@@ -1,4 +1,5 @@
 import music from '@/utils/musicSdk'
+import { getOrderedSources } from '@/utils/sourceOrder'
 
 export declare type Source = LX.OnlineSource
 
@@ -45,7 +46,7 @@ const state: InitState = {
   },
 }
 
-for (const source of music.sources) {
+for (const source of getOrderedSources(music.sources)) {
   if (!music[source.id as LX.OnlineSource]?.leaderboard?.getBoards) continue
   state.sources.push(source.id as LX.OnlineSource)
 }
