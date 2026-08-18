@@ -553,7 +553,7 @@ export const addUserApi = async(script: string): Promise<LX.UserApi.UserApiInfo>
   const apiInfo: LX.UserApi.UserApiInfo = {
     id: `user_api_${Math.random().toString().substring(2, 5)}_${Date.now()}`,
     ...scriptInfo,
-    allowShowUpdateAlert: true,
+    allowShowUpdateAlert: false,
   }
   userApis.push(apiInfo)
   await saveDataMultiple([
