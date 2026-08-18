@@ -5,8 +5,12 @@
  * 没有保存各音源的歌手 ID，因此无法直接调用各源的“按 ID 查歌手详情”接口
  * （如 wy 的 /weapi/artist/head/info/get、kg 的 /api/v5/singer/info 等）。
  *
- * 这里统一走网易云的歌手搜索接口：按歌手名搜索，取排名第一的歌手头图。
- * 网易云歌手图覆盖率和清晰度都不错，且不需要额外的 Cookie。
+ * 图源优先级：QQ音乐 → 网易云，两个都失败才返回 null。
+ *
+ * - QQ音乐：走 smartbox 联想搜索接口按歌手名匹配，取 singerMID 后用官方 CDN
+ *   规则拼接歌手头图（T001 开头 = 歌手图，T002 开头 = 专辑图，是两类不同资源位）。
+ *   华语歌手覆盖率和图片准确率是几个音源里最好的，且完全不需要 Cookie/Key。
+ * - 网易云：按歌手名搜索，取排名第一的歌手头图，作为 QQ音乐查不到时的兜底。
  *
  * 使用方就算请求失败也不应该影响正常播放，因此这里内部吞掉了错误，
  * 失败时返回 null，由调用方自行决定 fallback（例如回退到专辑封面）。
@@ -34,7 +38,58 @@ interface WySearchResult {
   }
 }
 
+interface TxSmartboxSinger {
+  singerMID?: string
+  singerName?: string
+}
+
+interface TxSmartboxResult {
+  code: number
+  data?: {
+    singer?: {
+      itemlist?: TxSmartboxSinger[]
+    }
+  }
+}
+
 const MAX_RETRY = 1
+
+/**
+ * 从歌手名字符串里粗略取出可比较的"核心名字"，用于校验 QQ音乐联想接口
+ * 返回的候选歌手是否真的对应我们要找的歌手（联想接口本质是模糊搜索，
+ * 排第一的不一定是精确匹配，尤其同名歌手或歌手名是常见词时）。
+ */
+const normalizeSingerName = (name: string) => name.trim().toLowerCase().replace(/\s+/g, '')
+
+const requestSingerPicFromTx = async(singerName: string, retryNum = 0): Promise<string | null> => {
+  const requestObj = httpFetch(`https://c.y.qq.com/splcloud/fcgi-bin/smartbox_new.fcg?is_xml=0&format=json&key=${encodeURIComponent(singerName)}&loginUin=0&hostUin=0&inCharset=utf8&outCharset=utf-8&notice=0&platform=yqq&needNewCode=0`, {
+    headers: {
+      Referer: 'https://y.qq.com/portal/player.html',
+    },
+  })
+
+  let body: TxSmartboxResult
+  try {
+    const result = await requestObj.promise
+    body = result.body as TxSmartboxResult
+  } catch (err) {
+    if (retryNum >= MAX_RETRY) return null
+    return requestSingerPicFromTx(singerName, retryNum + 1)
+  }
+
+  if (body.code !== 0) return null
+
+  const singerList = body.data?.singer?.itemlist
+  if (!singerList?.length) return null
+
+  // 联想接口返回的是模糊匹配列表，优先取名字完全一致的项，
+  // 避免歌手名是常见字/词时（如"海豚"）被无关结果顶掉
+  const target = normalizeSingerName(singerName)
+  const singer = singerList.find(item => item.singerName && normalizeSingerName(item.singerName) === target) ?? singerList[0]
+  if (!singer?.singerMID) return null
+
+  return `https://y.gtimg.cn/music/photo_new/T001R800x800M000${singer.singerMID}.jpg`
+}
 
 const requestSingerPicFromWy = async(singerName: string, retryNum = 0): Promise<string | null> => {
   const requestObj = httpFetch('https://music.163.com/weapi/cloudsearch/get/web', {
@@ -71,6 +126,24 @@ const requestSingerPicFromWy = async(singerName: string, retryNum = 0): Promise<
 }
 
 /**
+ * 依次尝试各音源，返回第一个命中的歌手图链接
+ */
+const requestSingerPic = async(name: string): Promise<string | null> => {
+  try {
+    const txUrl = await requestSingerPicFromTx(name)
+    if (txUrl) return txUrl
+  } catch (err) {
+    // QQ音乐失败不影响继续尝试网易云
+  }
+
+  try {
+    return await requestSingerPicFromWy(name)
+  } catch (err) {
+    return null
+  }
+}
+
+/**
  * 根据歌手名获取歌手图片链接
  * @param singerName 歌手名，支持“歌手A、歌手B”这种多歌手拼接的字符串，取第一个歌手
  * @returns 图片链接，获取失败时返回 null
@@ -84,7 +157,7 @@ export const getSingerPicBySingerName = async(singerName: string | null | undefi
   const pending = pendingRequests.get(name)
   if (pending) return pending
 
-  const requestPromise = requestSingerPicFromWy(name)
+  const requestPromise = requestSingerPic(name)
     .then(url => {
       singerPicCache.set(name, url)
       return url
