@@ -4,17 +4,21 @@ import { View } from 'react-native'
 
 import SubTitle from '../../components/SubTitle'
 import CheckBox from '@/components/common/CheckBox'
-import { createStyle } from '@/utils/tools'
+import TVButton from '@/components/common/TVButton'
+import { Icon } from '@/components/common/Icon'
+import { confirmDialog, createStyle, tipDialog } from '@/utils/tools'
 import { setApiSource } from '@/core/apiSource'
 import { useI18n } from '@/lang'
 import apiSourceInfo from '@/utils/musicSdk/api-source-info'
 import { useSettingValue } from '@/store/setting/hook'
-import { useStatus, useUserApiList } from '@/store/userApi'
+import settingState from '@/store/setting/state'
+import { useStatus, useUserApiList, state as userApiState } from '@/store/userApi'
+import { removeUserApi } from '@/core/userApi'
 import Button from '../../components/Button'
-import UserApiEditModal, { type UserApiEditModalType } from './UserApiEditModal'
+import ScriptImportExport, { type ScriptImportExportType } from './UserApiEditModal/ScriptImportExport'
+import ScriptImportOnline, { type ScriptImportOnlineType } from './UserApiEditModal/ScriptImportOnline'
 import Text from '@/components/common/Text'
 import { useTheme } from '@/store/theme/hook'
-// import { importUserApi, removeUserApi } from '@/core/userApi'
 
 const apiSourceList = apiSourceInfo.map(api => ({
   id: api.id,
@@ -28,28 +32,47 @@ const useActive = (id: string) => {
   return isActive
 }
 
-const Item = ({ id, name, desc, statusLabel, change }: {
+const Item = ({ id, name, desc, statusLabel, change, onRemove }: {
   id: string
   name: string
   desc?: string
   statusLabel?: string
   change: (id: string) => void
+  onRemove?: (id: string, name: string) => void
 }) => {
   const isActive = useActive(id)
   const theme = useTheme()
+  const handleRemove = () => {
+    onRemove?.(id, name)
+  }
   // const [toggleCheckBox, setToggleCheckBox] = useState(false)
   return (
-    <CheckBox marginBottom={5} check={isActive} onChange={() => { change(id) }} need>
-      <Text style={styles.sourceLabel}>
-        {name}
-        {
-          desc ? <Text style={styles.sourceDesc} color={theme['c-500']} size={13}>  {desc}</Text> : null
-        }
-        {
-          statusLabel ? <Text style={styles.sourceStatus} size={13}>  {statusLabel}</Text> : null
-        }
-      </Text>
-    </CheckBox>
+    <View style={styles.itemRow}>
+      <CheckBox marginBottom={5} check={isActive} onChange={() => { change(id) }} need>
+        <Text style={styles.sourceLabel}>
+          {name}
+          {
+            desc ? <Text style={styles.sourceDesc} color={theme['c-500']} size={13}>  {desc}</Text> : null
+          }
+          {
+            statusLabel ? <Text style={styles.sourceStatus} size={13}>  {statusLabel}</Text> : null
+          }
+        </Text>
+      </CheckBox>
+      {
+        onRemove
+          ? (
+              <TVButton
+                style={styles.removeBtn}
+                onPress={handleRemove}
+                borderRadius={4}
+              >
+                <Icon size={15} name="close" color={theme['c-500']} />
+              </TVButton>
+            )
+          : null
+      }
+    </View>
   )
 }
 
@@ -90,9 +113,46 @@ export default memo(() => {
     })
   }, [userApiListRaw, apiStatus, apiSourceSetting, t])
 
-  const modalRef = useRef<UserApiEditModalType>(null)
-  const handleShow = () => {
-    modalRef.current?.show()
+  const scriptImportExportRef = useRef<ScriptImportExportType>(null)
+  const scriptImportOnlineRef = useRef<ScriptImportOnlineType>(null)
+
+  const handleRemove = useCallback(async(id: string, name: string) => {
+    const confirm = await confirmDialog({
+      message: t('user_api_remove_tip', { name }),
+      cancelButtonText: t('cancel_button_text_2'),
+      confirmButtonText: t('confirm_button_text'),
+      bgClose: false,
+    })
+    if (!confirm) return
+    void removeUserApi([id]).finally(() => {
+      if (settingState.setting['common.apiSource'] == id) {
+        let backApiId = apiSourceInfo.find(api => !api.disabled)?.id
+        if (!backApiId) backApiId = userApiState.list[0]?.id
+        setApiSource(backApiId ?? '')
+      }
+    })
+  }, [t])
+
+  const handleImportLocal = () => {
+    if (userApiState.list.length > 20) {
+      void tipDialog({
+        message: t('user_api_max_tip'),
+        btnText: t('ok'),
+      })
+      return
+    }
+    scriptImportExportRef.current?.import()
+  }
+
+  const handleImportOnline = () => {
+    if (userApiState.list.length > 20) {
+      void tipDialog({
+        message: t('user_api_max_tip'),
+        btnText: t('ok'),
+      })
+      return
+    }
+    scriptImportOnlineRef.current?.show()
   }
 
   return (
@@ -102,13 +162,15 @@ export default memo(() => {
           list.map(({ id, name }) => <Item name={name} id={id} key={id} change={setApiSourceId} />)
         }
         {
-          userApiList.map(({ id, name, desc, statusLabel }) => <Item name={name} desc={desc} statusLabel={statusLabel} id={id} key={id} change={setApiSourceId} />)
+          userApiList.map(({ id, name, desc, statusLabel }) => <Item name={name} desc={desc} statusLabel={statusLabel} id={id} key={id} change={setApiSourceId} onRemove={handleRemove} />)
         }
       </View>
       <View style={styles.btn}>
-        <Button onPress={handleShow}>{t('setting_basic_source_user_api_btn')}</Button>
+        <Button onPress={handleImportLocal}>{t('user_api_btn_import_local')}</Button>
+        <Button onPress={handleImportOnline}>{t('user_api_btn_import_online')}</Button>
       </View>
-      <UserApiEditModal ref={modalRef} />
+      <ScriptImportExport ref={scriptImportExportRef} />
+      <ScriptImportOnline ref={scriptImportOnlineRef} />
     </SubTitle>
   )
 })
@@ -119,6 +181,17 @@ const styles = createStyle({
     flexShrink: 1,
     // flexDirection: 'row',
     // flexWrap: 'wrap',
+  },
+  itemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  removeBtn: {
+    marginLeft: 6,
+    marginBottom: 5,
+    padding: 6,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   btn: {
     marginTop: 10,
