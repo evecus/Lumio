@@ -58,6 +58,9 @@ export const toNewMusicInfo = (oldMusicInfo: any): LX.Music.MusicInfo => {
     }
 
     switch (oldMusicInfo.source) {
+      case 'wy':
+        meta.mv = oldMusicInfo.mv
+        break
       case 'kg':
         meta.hash = oldMusicInfo.hash
         newInfo.id = oldMusicInfo.songmid + '_' + oldMusicInfo.hash
@@ -102,6 +105,9 @@ export const toOldMusicInfo = (minfo: LX.Music.MusicInfo): any => {
     oInfo._types = minfo.meta._qualitys
 
     switch (minfo.source) {
+      case 'wy':
+        oInfo.mv = minfo.meta.mv
+        break
       case 'kg':
         oInfo.hash = minfo.meta.hash
         break
