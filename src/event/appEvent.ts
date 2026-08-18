@@ -201,6 +201,14 @@ export class AppEvent extends Event {
   selectSyncMode(mode: LX.Sync.ModeType) {
     this.emit('selectSyncMode', mode)
   }
+
+  /**
+   * 播放 MV 视频
+   * @param url MV 直链（MP4 / HLS）
+   */
+  showVideoPlayer(url: string) {
+    this.emit('showVideoPlayer', url)
+  }
 }
 
 

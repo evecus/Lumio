@@ -27,6 +27,7 @@ import { useSourceLabel } from '@/utils/hooks/useSourceLabel'
 import { useSettingValue } from '@/store/setting/hook'
 import { useI18n } from '@/lang'
 
+import VideoPlayerManager from '@/components/VideoPlayerManager'
 import TVSearchPanel, { type TVSearchPanelType } from './panels/TVSearchPanel'
 import TVSongListPanel, { type TVSongListPanelType } from './panels/TVSongListPanel'
 import TVLeaderboardGridPanel, { type TVLeaderboardGridPanelType } from './panels/TVLeaderboardGridPanel'
@@ -507,6 +508,7 @@ export default memo(() => {
       }
       <TVExitDialog ref={exitDialogRef} />
       <TVConfirmDialog ref={confirmDialogRef} />
+      <VideoPlayerManager />
     </View>
   )
 })

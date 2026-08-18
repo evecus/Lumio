@@ -1,4 +1,4 @@
-import { useRef, forwardRef, useImperativeHandle } from 'react'
+import { useRef, forwardRef, useImperativeHandle, useCallback } from 'react'
 import { View } from 'react-native'
 import List, { type ListProps, type ListType, type Status, type RowInfoType } from './List'
 import ListMenu, { type ListMenuType, type Position, type SelectInfo } from './ListMenu'
@@ -6,7 +6,8 @@ import ListMusicMultiAdd, { type MusicMultiAddModalType as ListAddMultiType } fr
 import ListMusicAdd, { type MusicAddModalType as ListMusicAddType } from '@/components/MusicAddModal'
 import MultipleModeBar, { type MultipleModeBarType, type SelectMode } from './MultipleModeBar'
 import { handlePlay, handlePlayLater, handleDislikeMusic } from './listAction'
-import { createStyle } from '@/utils/tools'
+import { createStyle, toast } from '@/utils/tools'
+import { getMvUrl } from '@/utils/musicSdk/wy/mv.js'
 
 export interface OnlineListProps {
   onRefresh: ListProps['onRefresh']
@@ -108,6 +109,17 @@ export default forwardRef<OnlineListType, OnlineListProps>(((({
     }
   }
 
+  const handlePlayMv = useCallback((info: SelectInfo) => {
+    const meta = info.musicInfo.meta as LX.Music.MusicInfoMeta_online & { mv?: number }
+    const mvId = meta?.mv
+    if (!mvId) return
+    getMvUrl(mvId).then((data: { url: string }) => {
+      global.app_event.showVideoPlayer(data.url)
+    }).catch((err: Error) => {
+      toast(err.message || '获取MV失败')
+    })
+  }, [])
+
   return (
     <View style={[styles.container, allowOverflow && styles.containerOverflowVisible]}>
       <View style={{ flex: 1 }}>
@@ -142,6 +154,7 @@ export default forwardRef<OnlineListType, OnlineListProps>(((({
         onAdd={handleAddMusic}
         onMove={handleMoveMusic}
         onDislike={info => { void handleDislikeMusic(info.musicInfo) }}
+        onPlayMv={handlePlayMv}
       />
     </View>
   )
