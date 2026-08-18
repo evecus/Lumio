@@ -1,7 +1,7 @@
 {
   "name": "lumio",
-  "version": "1.0.2",
-  "versionCode": 102,
+  "version": "1.0.3",
+  "versionCode": 103,
   "private": true,
   "scripts": {
     "dev": "react-native run-android --active-arch-only",
