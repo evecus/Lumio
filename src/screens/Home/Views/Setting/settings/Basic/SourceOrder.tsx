@@ -23,22 +23,27 @@ import { setFocusZone } from '@/screens/Home/TV/index'
 
 const allSourceIds = musicSdk.sources.map(s => s.id) as LX.OnlineSource[]
 
+const parseOrder = (orderStr: string): LX.OnlineSource[] => {
+  if (!orderStr) return allSourceIds
+  const saved = orderStr.split(',').filter(Boolean) as LX.OnlineSource[]
+  if (!saved.length) return allSourceIds
+
+  const remaining = new Set(allSourceIds)
+  const ordered: LX.OnlineSource[] = []
+  for (const id of saved) {
+    if (!remaining.has(id)) continue
+    ordered.push(id)
+    remaining.delete(id)
+  }
+  for (const id of allSourceIds) {
+    if (remaining.has(id)) ordered.push(id)
+  }
+  return ordered
+}
+
 const useOrderedSourceIds = (): LX.OnlineSource[] => {
   const savedOrder = useSettingValue('common.sourceOrder')
-  return useMemo(() => {
-    if (!savedOrder.length) return allSourceIds
-    const remaining = new Set(allSourceIds)
-    const ordered: LX.OnlineSource[] = []
-    for (const id of savedOrder) {
-      if (!remaining.has(id)) continue
-      ordered.push(id)
-      remaining.delete(id)
-    }
-    for (const id of allSourceIds) {
-      if (remaining.has(id)) ordered.push(id)
-    }
-    return ordered
-  }, [savedOrder])
+  return useMemo(() => parseOrder(savedOrder), [savedOrder])
 }
 
 const moveItem = (list: LX.OnlineSource[], index: number, offset: -1 | 1): LX.OnlineSource[] => {
@@ -99,12 +104,12 @@ export default memo(() => {
 
   const handleMoveUp = useCallback((index: number) => {
     const newOrder = moveItem(orderedIds, index, -1)
-    updateSetting({ 'common.sourceOrder': newOrder })
+    updateSetting({ 'common.sourceOrder': newOrder.join(',') })
   }, [orderedIds])
 
   const handleMoveDown = useCallback((index: number) => {
     const newOrder = moveItem(orderedIds, index, 1)
-    updateSetting({ 'common.sourceOrder': newOrder })
+    updateSetting({ 'common.sourceOrder': newOrder.join(',') })
   }, [orderedIds])
 
   return (

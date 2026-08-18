@@ -27,10 +27,11 @@ declare global {
       'common.sourceNameType': 'alias' | 'real'
 
       /**
-       * 音乐平台自定义显示顺序（歌单/排行榜、搜索页平台 Tab），存平台 id 数组
-       * 空数组表示使用默认顺序；数组中未包含的平台会自动追加到末尾
+       * 音乐平台自定义显示顺序（歌单/排行榜、搜索页平台 Tab）
+       * 以逗号分隔的平台 id 字符串存储（例如 "wy,kw,kg,tx,mg"），空字符串表示使用默认顺序
+       * 顺序中未包含的平台会自动追加到末尾
        */
-      'common.sourceOrder': LX.OnlineSource[]
+      'common.sourceOrder': string
 
       /**
        * 歌曲分享方式

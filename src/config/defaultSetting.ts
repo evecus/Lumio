@@ -4,7 +4,7 @@ const defaultSetting: LX.AppSetting = {
   'common.langId': 'zh_cn',
   'common.apiSource': '',
   'common.sourceNameType': 'real',
-  'common.sourceOrder': [],
+  'common.sourceOrder': '',
   'common.shareType': 'system',
   'common.isAgreePact': false,
   'common.autoHidePlayBar': true,
