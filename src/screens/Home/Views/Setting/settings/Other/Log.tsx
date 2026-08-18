@@ -7,7 +7,6 @@ import SubTitle from '../../components/SubTitle'
 import Button from '../../components/Button'
 import { createStyle, toast } from '@/utils/tools'
 import ConfirmAlert, { type ConfirmAlertType } from '@/components/common/ConfirmAlert'
-import CheckBoxItem from '../../components/CheckBoxItem'
 import { useI18n } from '@/lang'
 import Text from '@/components/common/Text'
 
@@ -16,8 +15,6 @@ export default memo(() => {
   const alertRef = useRef<ConfirmAlertType>(null)
   const [logText, setLogText] = useState('')
   const isUnmountedRef = useRef(true)
-  const [isEnableSyncErrorLog, setIsEnableSyncErrorLog] = useState(global.lx.isEnableSyncLog)
-  const [isEnableUserApiLog, setIsEnableUserApiLog] = useState(global.lx.isEnableUserApiLog)
 
   const getErrorLog = () => {
     void getLogs().then(log => {
@@ -41,17 +38,6 @@ export default memo(() => {
     })
   }
 
-  const handleSetEnableSyncErrorLog = (enable: boolean) => {
-    setIsEnableSyncErrorLog(enable)
-    global.lx.isEnableSyncLog = enable
-  }
-
-  const handleSetEnableUserApiLog = (enable: boolean) => {
-    setIsEnableUserApiLog(enable)
-    global.lx.isEnableUserApiLog = enable
-  }
-
-
   useEffect(() => {
     isUnmountedRef.current = false
     return () => {
@@ -62,10 +48,6 @@ export default memo(() => {
   return (
     <>
       <SubTitle title={t('setting_other_log')}>
-        <View style={styles.checkBox}>
-          <CheckBoxItem check={isEnableSyncErrorLog} label={t('setting_other_log_sync_log')} onChange={handleSetEnableSyncErrorLog} />
-          <CheckBoxItem check={isEnableUserApiLog} label={t('setting_other_log_user_api_log')} onChange={handleSetEnableUserApiLog} />
-        </View>
         <View style={styles.btn}>
           <Button onPress={openLogModal}>{t('setting_other_log_btn_show')}</Button>
         </View>
@@ -91,11 +73,6 @@ export default memo(() => {
 })
 
 const styles = createStyle({
-  checkBox: {
-    // paddingTop: 10,
-    paddingBottom: 15,
-    marginLeft: -25,
-  },
   btn: {
     flexDirection: 'row',
   },
