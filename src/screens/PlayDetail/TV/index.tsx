@@ -172,14 +172,16 @@ const LyricView = memo(({ isBackgroundLayout, songName, singer }: {
     // 标题说明行：只隐藏文字内容，行本身（含固定高度）依然保留，
     // 这样 FlatList 的 getItemLayout（固定 68px 一行）和滚动定位都不受影响。
     if (isTitleInfoLine(item.text, songName, singer)) {
-      return <View style={s.lrcLine} />
+      return <View style={s.lrcLine} focusable={false} />
     }
     return (
       <View
         style={s.lrcLine}
+        focusable={false}
         onLayout={e => { itemHeights.current[index] = e.nativeEvent.layout.height }}
       >
         <Text
+          focusable={false}
           size={active ? 24 : 18}
           color={active ? activeColor : inactiveColor}
           style={[s.lrcText, active && s.lrcActive]}
@@ -190,6 +192,7 @@ const LyricView = memo(({ isBackgroundLayout, songName, singer }: {
         </Text>
         {item.extendedLyrics?.[0]?.text ? (
           <Text
+            focusable={false}
             size={active ? 18 : 14}
             color={active ? activeSubColor : inactiveSubColor}
             style={s.lrcText}
@@ -204,15 +207,15 @@ const LyricView = memo(({ isBackgroundLayout, songName, singer }: {
 
   if (lines.length === 0) {
     return (
-      <View style={s.lrcEmpty}>
+      <View style={s.lrcEmpty} focusable={false}>
         <Icon name="lyric-on" size={36} color={isBackgroundLayout ? 'rgba(255,255,255,0.7)' : theme['c-font-label']} />
-        <Text size={14} color={isBackgroundLayout ? 'rgba(255,255,255,0.7)' : theme['c-font-label']} style={{ marginTop: 10 }}>暂无歌词</Text>
+        <Text focusable={false} size={14} color={isBackgroundLayout ? 'rgba(255,255,255,0.7)' : theme['c-font-label']} style={{ marginTop: 10 }}>暂无歌词</Text>
       </View>
     )
   }
 
   return (
-    <View style={s.lrcContainer}>
+    <View style={s.lrcContainer} focusable={false}>
       <FlatList
         ref={listRef}
         style={s.lrcList}
@@ -226,6 +229,11 @@ const LyricView = memo(({ isBackgroundLayout, songName, singer }: {
           offset: 68 * index,
           index,
         })}
+        // 歌词区域仅用于展示和跟随播放自动滚动，不需要遥控器交互；
+        // Android TV 上 FlatList/View/Text 默认可能被判定为可聚焦节点，
+        // 显式关闭焦点，避免遥控器方向键把焦点带进歌词列表里出不来
+        focusable={false}
+        scrollEnabled={false}
       />
     </View>
   )
