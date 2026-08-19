@@ -112,6 +112,7 @@ export default forwardRef<OnlineListType, OnlineListProps>(((({
   const handlePlayMv = useCallback((info: SelectInfo) => {
     const meta = info.musicInfo.meta as LX.Music.MusicInfoMeta_online & { mv?: number }
     const mvId = meta?.mv
+    console.log('[handlePlayMv] source=', info.musicInfo.source, 'mvId=', mvId, 'meta=', meta)
     if (!mvId) return
     getMvUrl(mvId).then((data: { url: string }) => {
       global.app_event.showVideoPlayer(data.url)
