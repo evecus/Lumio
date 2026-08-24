@@ -1,7 +1,7 @@
 /**
  * 我的列表歌曲操作菜单 — TV 弹窗版
  *
- * 操作项：播放 / 稍后播放 / 添加到 / 移动到 / 歌曲换源 / 不喜欢 / 移除 / 播放MV（仅网易云、酷狗有 MV 时）
+ * 操作项：播放 / 播放MV（仅网易云、酷狗有 MV 时） / 稍后播放 / 添加到 / 移动到 / 歌曲换源 / 不喜欢 / 移除
  * 全部使用 TVListMenuDialog 居中弹窗，遥控器可聚焦点击。
  */
 import { useRef, useImperativeHandle, forwardRef, useState } from 'react'
@@ -50,21 +50,24 @@ export default forwardRef<ListMenuType, ListMenuProps>((props, ref) => {
 
   const buildMenus = (info: SelectInfo): MenuItemDef<MenuAction>[] => {
     const items: MenuItemDef<MenuAction>[] = [
-      { action: 'play',         label: t('play') },
+      { action: 'play', label: t('play') },
+    ]
+
+    // 网易云（wy）或酷狗（kg）且歌曲有 MV 标识时，紧跟在"播放"后追加"播放MV"
+    // wy: mv 为数字 ID；kg: mv 为 mvhash 字符串 —— 统一用 meta.mv 存储，truthy 即有 MV
+    const meta = info?.musicInfo?.meta as (LX.Music.MusicInfoMeta_online & { mv?: number | string }) | undefined
+    if ((info?.musicInfo?.source === 'wy' || info?.musicInfo?.source === 'kg') && meta?.mv) {
+      items.push({ action: 'playMv', label: '播放MV' })
+    }
+
+    items.push(
       { action: 'playLater',    label: t('play_later') },
       { action: 'add',          label: t('add_to') },
       { action: 'move',         label: t('move_to') },
       { action: 'toggleSource', label: t('toggle_source') },
       { action: 'dislike',      label: t('dislike') },
       { action: 'remove',       label: t('list_remove') },
-    ]
-
-    // 网易云（wy）或酷狗（kg）且歌曲有 MV 标识时追加"播放MV"
-    // wy: mv 为数字 ID；kg: mv 为 mvhash 字符串 —— 统一用 meta.mv 存储，truthy 即有 MV
-    const meta = info?.musicInfo?.meta as (LX.Music.MusicInfoMeta_online & { mv?: number | string }) | undefined
-    if ((info?.musicInfo?.source === 'wy' || info?.musicInfo?.source === 'kg') && meta?.mv) {
-      items.push({ action: 'playMv', label: '播放MV' })
-    }
+    )
 
     return items
   }
