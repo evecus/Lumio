@@ -745,6 +745,8 @@ export default {
         types,
         _types,
         typeUrl: {},
+        // MV：mvhash 非空即有 MV
+        mv: item.mvhash || null,
       }
     })
   },
@@ -869,6 +871,8 @@ export default {
         types,
         _types,
         typeUrl: {},
+        // MV：歌单详情接口 v2 同样会带 mvhash
+        mv: item.audio_info.mvhash || null,
       })
     })
     return list

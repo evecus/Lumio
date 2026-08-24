@@ -7,7 +7,8 @@ import ListMusicAdd, { type MusicAddModalType as ListMusicAddType } from '@/comp
 import MultipleModeBar, { type MultipleModeBarType, type SelectMode } from './MultipleModeBar'
 import { handlePlay, handlePlayLater, handleDislikeMusic } from './listAction'
 import { createStyle, toast } from '@/utils/tools'
-import { getMvUrl } from '@/utils/musicSdk/wy/mv.js'
+import { getMvUrl as getWyMvUrl } from '@/utils/musicSdk/wy/mv.js'
+import { getMvUrl as getKgMvUrl } from '@/utils/musicSdk/kg/mv.js'
 
 export interface OnlineListProps {
   onRefresh: ListProps['onRefresh']
@@ -110,11 +111,18 @@ export default forwardRef<OnlineListType, OnlineListProps>(((({
   }
 
   const handlePlayMv = useCallback((info: SelectInfo) => {
-    const meta = info.musicInfo.meta as LX.Music.MusicInfoMeta_online & { mv?: number }
+    const source = info.musicInfo.source
+    const meta = info.musicInfo.meta as LX.Music.MusicInfoMeta_online & { mv?: number | string }
     const mvId = meta?.mv
-    console.log('[handlePlayMv] source=', info.musicInfo.source, 'mvId=', mvId, 'meta=', meta)
     if (!mvId) return
-    getMvUrl(mvId).then((data: { url: string }) => {
+
+    // 按平台路由到对应的 MV 直链获取函数
+    const fetchMvUrl =
+      source === 'kg'
+        ? getKgMvUrl(mvId as string)
+        : getWyMvUrl(mvId as number)
+
+    fetchMvUrl.then((data: { url: string }) => {
       global.app_event.showVideoPlayer(data.url)
     }).catch((err: Error) => {
       toast(err.message || '获取MV失败')

@@ -50,9 +50,10 @@ export default forwardRef<ListMenuType, ListMenuProps>((props, ref) => {
       { action: 'dislike',   label: t('dislike') },
     ]
 
-    // 仅网易云（wy）且歌曲有 MV ID 时追加"播放MV"
-    const meta = info?.musicInfo?.meta as (LX.Music.MusicInfoMeta_online & { mv?: number }) | undefined
-    if (info?.musicInfo?.source === 'wy' && meta?.mv) {
+    // 网易云（wy）或酷狗（kg）且歌曲有 MV 标识时追加"播放MV"
+    // wy: mv 为数字 ID；kg: mv 为 mvhash 字符串 —— 统一用 meta.mv 存储，truthy 即有 MV
+    const meta = info?.musicInfo?.meta as (LX.Music.MusicInfoMeta_online & { mv?: number | string }) | undefined
+    if ((info?.musicInfo?.source === 'wy' || info?.musicInfo?.source === 'kg') && meta?.mv) {
       items.push({ action: 'playMv', label: '播放MV' })
     }
 

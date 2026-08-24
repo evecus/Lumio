@@ -62,6 +62,8 @@ export default {
       types,
       _types,
       typeUrl: {},
+      // MV：MvHash 非空字符串即表示该歌曲有 MV，与 wy 的 mv 字段语义一致
+      mv: rawData.MvHash || null,
     }
   },
   handleResult(rawData) {

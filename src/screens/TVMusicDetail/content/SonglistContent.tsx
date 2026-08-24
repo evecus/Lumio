@@ -19,7 +19,8 @@ import ListMenu, { type ListMenuType } from '@/components/OnlineList/ListMenu'
 import ListMusicAdd, { type MusicAddModalType } from '@/components/MusicAddModal'
 import ListMusicMultiAdd, { type MusicMultiAddModalType } from '@/components/MusicMultiAddModal'
 import { handlePlayLater, handleDislikeMusic } from '@/components/OnlineList/listAction'
-import { getMvUrl } from '@/utils/musicSdk/wy/mv.js'
+import { getMvUrl as getWyMvUrl } from '@/utils/musicSdk/wy/mv.js'
+import { getMvUrl as getKgMvUrl } from '@/utils/musicSdk/kg/mv.js'
 import { toast } from '@/utils/tools'
 
 export interface SonglistContentType {
@@ -122,13 +123,18 @@ export default forwardRef<SonglistContentType, Props>(({ id, source, name }, ref
   }
 
   const handlePlayMv = (info: { musicInfo: LX.Music.MusicInfoOnline }) => {
-    const meta = info.musicInfo.meta as LX.Music.MusicInfoMeta_online & { mv?: number }
+    const source = info.musicInfo.source
+    const meta = info.musicInfo.meta as LX.Music.MusicInfoMeta_online & { mv?: number | string }
     const mvId = meta?.mv
     if (!mvId) {
       toast('该歌曲没有MV')
       return
     }
-    getMvUrl(mvId).then((data: { url: string }) => {
+    const fetchMvUrl =
+      source === 'kg'
+        ? getKgMvUrl(mvId as string)
+        : getWyMvUrl(mvId as number)
+    fetchMvUrl.then((data: { url: string }) => {
       global.app_event.showVideoPlayer(data.url)
     }).catch((err: Error) => {
       toast(err.message || '获取MV失败')
