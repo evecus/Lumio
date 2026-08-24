@@ -21,6 +21,12 @@ export const addUserApi = (info: LX.UserApi.UserApiInfo) => {
   event.list_changed([...state.list])
 }
 
+export const setUserApiGroupList = (list: LX.UserApi.UserApiGroupInfo[]) => {
+  state.groupList = list
+
+  event.group_list_changed([...list])
+}
+
 
 export const setUserApiAllowShowUpdateAlert = (id: string, enable: boolean) => {
   const targetIndex = state.list.findIndex(api => api.id == id)

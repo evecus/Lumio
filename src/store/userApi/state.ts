@@ -1,6 +1,7 @@
 
 interface InitState {
   list: LX.UserApi.UserApiInfo[]
+  groupList: LX.UserApi.UserApiGroupInfo[]
   status: {
     status: boolean
     message?: string
@@ -9,6 +10,7 @@ interface InitState {
 }
 const state: InitState = {
   list: [],
+  groupList: [],
   status: {
     status: false,
     message: 'initing',

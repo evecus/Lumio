@@ -9,6 +9,10 @@ class UserApiEvent extends Event {
   list_changed(list: LX.UserApi.UserApiInfo[]) {
     this.emit('list_changed', list)
   }
+
+  group_list_changed(list: LX.UserApi.UserApiGroupInfo[]) {
+    this.emit('group_list_changed', list)
+  }
 }
 
 

@@ -17,6 +17,7 @@ import { removeUserApi } from '@/core/userApi'
 import Button from '../../components/Button'
 import ScriptImportExport, { type ScriptImportExportType } from './UserApiEditModal/ScriptImportExport'
 import ScriptImportOnline, { type ScriptImportOnlineType } from './UserApiEditModal/ScriptImportOnline'
+import GroupImportOnline, { type GroupImportOnlineType } from './UserApiEditModal/GroupImportOnline'
 import Text from '@/components/common/Text'
 import { useTheme } from '@/store/theme/hook'
 
@@ -115,6 +116,7 @@ export default memo(() => {
 
   const scriptImportExportRef = useRef<ScriptImportExportType>(null)
   const scriptImportOnlineRef = useRef<ScriptImportOnlineType>(null)
+  const groupImportOnlineRef = useRef<GroupImportOnlineType>(null)
 
   const handleRemove = useCallback(async(id: string, name: string) => {
     const confirm = await confirmDialog({
@@ -155,6 +157,17 @@ export default memo(() => {
     scriptImportOnlineRef.current?.show()
   }
 
+  const handleImportGroup = () => {
+    if (userApiState.list.length > 20) {
+      void tipDialog({
+        message: t('user_api_max_tip'),
+        btnText: t('ok'),
+      })
+      return
+    }
+    groupImportOnlineRef.current?.show()
+  }
+
   return (
     <SubTitle title={t('setting_basic_source')}>
       <View style={styles.list}>
@@ -168,9 +181,11 @@ export default memo(() => {
       <View style={styles.btn}>
         <Button onPress={handleImportLocal}>{t('user_api_btn_import_local')}</Button>
         <Button onPress={handleImportOnline}>{t('user_api_btn_import_online')}</Button>
+        <Button onPress={handleImportGroup}>{t('user_api_btn_import_group')}</Button>
       </View>
       <ScriptImportExport ref={scriptImportExportRef} />
       <ScriptImportOnline ref={scriptImportOnlineRef} />
+      <GroupImportOnline ref={groupImportOnlineRef} />
     </SubTitle>
   )
 })

@@ -27,9 +27,10 @@ export const setUserApiList: typeof action['setUserApiList'] = (list) => {
   action.setUserApiList(list)
 }
 
-export const importUserApi = async(script: string) => {
-  const info = await addUserApi(script)
+export const importUserApi = async(script: string, groupId?: string) => {
+  const info = await addUserApi(script, groupId)
   action.addUserApi(info)
+  return info
 }
 
 export const removeUserApi = async(ids: string[]) => {

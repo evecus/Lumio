@@ -27,3 +27,16 @@ export const useUserApiList = () => {
 
   return value
 }
+
+export const useUserApiGroupList = () => {
+  const [value, update] = useState(state.groupList)
+
+  useEffect(() => {
+    event.on('group_list_changed', update)
+    return () => {
+      event.off('group_list_changed', update)
+    }
+  }, [])
+
+  return value
+}

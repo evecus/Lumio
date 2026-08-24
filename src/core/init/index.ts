@@ -9,6 +9,7 @@ import initSync from './sync'
 import initCommonState from './common'
 import { initDeeplink } from './deeplink'
 import { setApiSource } from '@/core/apiSource'
+import { checkUserApiGroupUpdateOnLaunch } from '@/core/userApiGroup'
 import commonActions from '@/store/common/action'
 import settingState from '@/store/setting/state'
 import { checkUpdate } from '@/core/version'
@@ -44,6 +45,8 @@ export default async() => {
 
   await initUserApi(setting)
   bootLog('User Api inited.')
+  // 后台静默检查聚合源分组是否有更新，不阻塞启动流程，各分组内部按 24h 节流
+  checkUserApiGroupUpdateOnLaunch()
 
   setApiSource(setting['common.apiSource'])
   bootLog('Api inited.')

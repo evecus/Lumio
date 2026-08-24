@@ -27,6 +27,7 @@ const syncHostHistoryPrefix = storageDataPrefix.syncHostHistory
 const listPrefix = storageDataPrefix.list
 const dislikeListPrefix = storageDataPrefix.dislikeList
 const userApiPrefix = storageDataPrefix.userApi
+const userApiGroupPrefix = storageDataPrefix.userApiGroup
 const openStoragePathPrefix = storageDataPrefix.openStoragePath
 const selectedManagedFolderPrefix = storageDataPrefix.selectedManagedFolder
 
@@ -543,7 +544,7 @@ const matchInfo = (scriptInfo: string) => {
 
   return infos as Record<keyof typeof INFO_NAMES, string>
 }
-export const addUserApi = async(script: string): Promise<LX.UserApi.UserApiInfo> => {
+export const addUserApi = async(script: string, groupId?: string): Promise<LX.UserApi.UserApiInfo> => {
   const result = /^\/\*[\S|\s]+?\*\//.exec(script)
   if (!result) throw new Error(global.i18n.t('user_api_add_failed_tip'))
 
@@ -554,6 +555,7 @@ export const addUserApi = async(script: string): Promise<LX.UserApi.UserApiInfo>
     id: `user_api_${Math.random().toString().substring(2, 5)}_${Date.now()}`,
     ...scriptInfo,
     allowShowUpdateAlert: false,
+    ...(groupId ? { groupId } : null),
   }
   userApis.push(apiInfo)
   await saveDataMultiple([
@@ -581,4 +583,32 @@ export const setUserApiAllowShowUpdateAlert = async(id: string, enable: boolean)
   if (!targetApi) return
   targetApi.allowShowUpdateAlert = enable
   await saveData(userApiPrefix, userApis)
+}
+
+// ------------------------------------------------------------------
+// 聚合源分组（一个远端 JSON 清单一次导入的一批自定义源）
+// ------------------------------------------------------------------
+let userApiGroups: LX.UserApi.UserApiGroupInfo[] = []
+export const getUserApiGroupList = async(): Promise<LX.UserApi.UserApiGroupInfo[]> => {
+  userApiGroups = await getData<LX.UserApi.UserApiGroupInfo[]>(userApiGroupPrefix) ?? []
+  return [...userApiGroups]
+}
+export const addUserApiGroup = async(info: LX.UserApi.UserApiGroupInfo) => {
+  userApiGroups.push(info)
+  await saveData(userApiGroupPrefix, userApiGroups)
+  return [...userApiGroups]
+}
+export const updateUserApiGroup = async(id: string, patch: Partial<LX.UserApi.UserApiGroupInfo>) => {
+  const target = userApiGroups.find(g => g.id == id)
+  if (!target) return [...userApiGroups]
+  Object.assign(target, patch)
+  await saveData(userApiGroupPrefix, userApiGroups)
+  return [...userApiGroups]
+}
+export const removeUserApiGroup = async(id: string) => {
+  const index = userApiGroups.findIndex(g => g.id == id)
+  if (index < 0) return [...userApiGroups]
+  userApiGroups.splice(index, 1)
+  await saveData(userApiGroupPrefix, userApiGroups)
+  return [...userApiGroups]
 }
