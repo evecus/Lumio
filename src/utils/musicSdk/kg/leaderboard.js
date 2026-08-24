@@ -141,6 +141,8 @@ export default {
         types,
         _types,
         typeUrl: {},
+        // MV：榜单接口返回 mvhash，非空即有 MV
+        mv: item.mvhash || null,
       }
     })
   },
