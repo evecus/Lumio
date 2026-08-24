@@ -29,7 +29,7 @@ declare namespace LX {
       qualitys: MusicQualityType[]
       _qualitys: _MusicQualityType
       albumId?: string | number // 歌曲专辑ID
-      mv?: number // MV ID（网易云音乐，0 表示无 MV）
+      mv?: number | string // MV 标识：网易云为数字 MV ID（0 表示无 MV），酷狗为 mvhash 字符串（空表示无 MV）
     }
 
     interface MusicInfoMeta_local extends MusicInfoMetaBase {
