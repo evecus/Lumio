@@ -28,6 +28,7 @@ import { type TVMusicDetailParams } from '@/navigation/navigation'
 import LeaderboardContent, { type LeaderboardContentType } from './content/LeaderboardContent'
 import SonglistContent, { type SonglistContentType } from './content/SonglistContent'
 import MylistContent, { type MylistContentType } from './content/MylistContent'
+import VideoPlayerManager from '@/components/VideoPlayerManager'
 
 type ContentRef = LeaderboardContentType | SonglistContentType | MylistContentType
 
@@ -227,6 +228,7 @@ export default ({ componentId, params }: { componentId: string; params: TVMusicD
           )}
         </View>
       </View>
+      <VideoPlayerManager />
     </PageContent>
   )
 }

@@ -14,6 +14,8 @@ import ListMenu, { type ListMenuType } from '@/components/OnlineList/ListMenu'
 import ListMusicAdd, { type MusicAddModalType } from '@/components/MusicAddModal'
 import ListMusicMultiAdd, { type MusicMultiAddModalType } from '@/components/MusicMultiAddModal'
 import { handlePlayLater, handleDislikeMusic } from '@/components/OnlineList/listAction'
+import { getMvUrl } from '@/utils/musicSdk/wy/mv.js'
+import { toast } from '@/utils/tools'
 
 export interface LeaderboardContentType {
   _type: 'leaderboard'
@@ -107,6 +109,20 @@ export default forwardRef<LeaderboardContentType, Props>(({ id, source }, ref) =
     }, position)
   }
 
+  const handlePlayMv = (info: { musicInfo: LX.Music.MusicInfoOnline }) => {
+    const meta = info.musicInfo.meta as LX.Music.MusicInfoMeta_online & { mv?: number }
+    const mvId = meta?.mv
+    if (!mvId) {
+      toast('该歌曲没有MV')
+      return
+    }
+    getMvUrl(mvId).then((data: { url: string }) => {
+      global.app_event.showVideoPlayer(data.url)
+    }).catch((err: Error) => {
+      toast(err.message || '获取MV失败')
+    })
+  }
+
   return (
     <View style={{ flex: 1 }}>
       <OnlineMusicList
@@ -124,6 +140,7 @@ export default forwardRef<LeaderboardContentType, Props>(({ id, source }, ref) =
         onAdd={info => { listMusicAddRef.current?.show({ musicInfo: info.musicInfo, listId: '', isMove: false }) }}
         onMove={info => { listMusicAddRef.current?.show({ musicInfo: info.musicInfo, listId: '', isMove: true }) }}
         onDislike={info => { void handleDislikeMusic(info.musicInfo) }}
+        onPlayMv={handlePlayMv}
       />
     </View>
   )
