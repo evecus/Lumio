@@ -16,6 +16,9 @@ import ListMenu, { type ListMenuType, type Position } from '@/screens/Home/Views
 import ListMusicAdd, { type MusicAddModalType } from '@/components/MusicAddModal'
 import ListMusicMultiAdd, { type MusicMultiAddModalType } from '@/components/MusicMultiAddModal'
 import MusicToggleModal, { type MusicToggleModalType } from '@/screens/Home/Views/Mylist/MusicList/MusicToggleModal'
+import { getMvUrl as getWyMvUrl } from '@/utils/musicSdk/wy/mv.js'
+import { getMvUrl as getKgMvUrl } from '@/utils/musicSdk/kg/mv.js'
+import { toast } from '@/utils/tools'
 
 export interface MylistContentType {
   _type: 'mylist'
@@ -106,6 +109,25 @@ export default forwardRef<MylistContentType, Props>(({ id }, ref) => {
     }, position)
   }, [id])
 
+  const handlePlayMv = useCallback((info: { musicInfo: LX.Music.MusicInfo }) => {
+    const source = info.musicInfo.source
+    const meta = info.musicInfo.meta as LX.Music.MusicInfoMeta_online & { mv?: number | string }
+    const mvId = meta?.mv
+    if (!mvId) {
+      toast('该歌曲没有MV')
+      return
+    }
+    const fetchMvUrl =
+      source === 'kg'
+        ? getKgMvUrl(mvId as string)
+        : getWyMvUrl(mvId as number)
+    fetchMvUrl.then((data: { url: string }) => {
+      global.app_event.showVideoPlayer(data.url)
+    }).catch((err: Error) => {
+      toast(err.message || '获取MV失败')
+    })
+  }, [])
+
   return (
     <View style={{ flex: 1 }}>
       <MyMusicList
@@ -136,6 +158,7 @@ export default forwardRef<MylistContentType, Props>(({ id }, ref) => {
         onDislike={() => {}}
         onRemove={info => { handleRemove(info.listId, info.musicInfo, info.selectedList, () => {}) }}
         onToggleSource={info => { musicToggleModalRef.current?.show({ musicInfo: info.musicInfo, listId: info.listId }) }}
+        onPlayMv={handlePlayMv}
       />
       <MusicToggleModal ref={musicToggleModalRef} />
     </View>
