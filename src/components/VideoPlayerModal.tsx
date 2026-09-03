@@ -5,10 +5,12 @@
  * - controls={false}，使用与「TV 播放详情页」一致的自定义控制栏：
  *   - 聚焦 OK/确认键：播放/暂停
  *   - 进度条聚焦后左右键：±10s 快进快退（连续按自动合并，松开 1s 后提交 seek）
- *   - 5s 无操作自动隐藏控制栏；隐藏时按任意方向键重新呼出
+ *   - 3s 无操作自动隐藏控制栏；隐藏时按任意方向键重新呼出
  *   - 返回键：控制栏隐藏时先呼出，控制栏可见时才退出播放器（防误触退出）
  *   - 遥控器媒体键（播放/暂停）：直接切换播放状态
+ *   - 控制栏无黑底，直接叠加在视频画面上
  * - 顶部显示歌曲名 + 歌手名
+ * - 播放结束后控制栏常驻（不自动隐藏），提供重播/退出；重播后恢复 3s 自动隐藏
  * - 加载/缓冲统一显示 loading 指示器，20s 超时提示失败
  * - 播放出错 toast 提示后自动退出，不再静默关闭
  */
@@ -32,7 +34,7 @@ export interface VideoPlayerModalType {
 }
 
 const SEEK_STEP = 10          // 左右键快进/快退步长（秒）
-const AUTO_HIDE_DELAY = 5000  // 控制栏自动隐藏延时
+const AUTO_HIDE_DELAY = 3000  // 控制栏自动隐藏延时（播放结束后常驻不隐藏）
 const SLIDE_DURATION = 260    // 控制栏滑入滑出动画时长
 const BAR_HEIGHT = 148        // 底部控制栏总高度（含进度条+按钮）
 const LOAD_TIMEOUT = 20000    // 加载超时（毫秒）
@@ -60,6 +62,7 @@ export default forwardRef<VideoPlayerModalType, {}>((_, ref) => {
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [buffered, setBuffered] = useState(0)
+  const [ended, setEnded] = useState(false)
 
   // 控制栏显隐（ref 供按键回调读取最新值，避免闭包陈旧问题）
   const [barVisible, setBarVisible] = useState(true)
@@ -82,6 +85,8 @@ export default forwardRef<VideoPlayerModalType, {}>((_, ref) => {
   }, [slideAnim])
 
   const scheduleHide = useCallback(() => {
+    // 播放结束后控制栏常驻，不自动隐藏
+    if (endedRef.current) return
     if (hideTimerRef.current) clearTimeout(hideTimerRef.current)
     hideTimerRef.current = setTimeout(() => {
       hideBar()
@@ -104,6 +109,7 @@ export default forwardRef<VideoPlayerModalType, {}>((_, ref) => {
     setBuffered(0)
     setTitle('')
     setSinger('')
+    setEnded(false)
     endedRef.current = false
     barVisibleRef.current = true
     setBarVisible(true)
@@ -124,6 +130,7 @@ export default forwardRef<VideoPlayerModalType, {}>((_, ref) => {
       setDuration(0)
       setBuffered(0)
       endedRef.current = false
+      setEnded(false)
       modalRef.current?.setVisible(true)
       // 显式把焦点推给播放按钮：弹窗二次打开时 hasTVPreferredFocus 不一定再次生效
       requestAnimationFrame(() => {
@@ -137,8 +144,9 @@ export default forwardRef<VideoPlayerModalType, {}>((_, ref) => {
   // ── 播放/暂停 ────────────────────────────────────────────────
   const togglePlay = useCallback(() => {
     if (endedRef.current) {
-      // 播放结束后再按播放：从头重播
+      // 播放结束后再按播放：从头重播（恢复自动隐藏）
       endedRef.current = false
+      setEnded(false)
       videoRef.current?.seek(0)
       setPaused(false)
     } else {
@@ -246,9 +254,10 @@ export default forwardRef<VideoPlayerModalType, {}>((_, ref) => {
             onBuffer={({ isBuffering }) => { setBuffering(isBuffering) }}
             onEnd={() => {
               endedRef.current = true
+              setEnded(true)
               setPaused(true)
+              // 播放结束后控制栏常驻，供用户选择重播/退出
               showBar()
-              scheduleHide()
             }}
             onError={handleError}
           />
@@ -292,7 +301,7 @@ export default forwardRef<VideoPlayerModalType, {}>((_, ref) => {
           <View style={s.controls}>
             <TVButton
               ref={playBtnRef}
-              style={s.btn}
+              style={[s.btn, ended && s.btnActive]}
               onPress={togglePlay}
               onFocus={handleAnyControlFocus}
               hasTVPreferredFocus
@@ -300,6 +309,17 @@ export default forwardRef<VideoPlayerModalType, {}>((_, ref) => {
             >
               <Icon name={paused ? 'play' : 'pause'} color="#ffffff" rawSize={28} />
             </TVButton>
+            {/* 播放结束后出现：退出播放器 */}
+            {ended && (
+              <TVButton
+                style={s.btn}
+                onPress={handleClose}
+                onFocus={handleAnyControlFocus}
+                borderRadius={36}
+              >
+                <Text size={16} color="#ffffff">退出</Text>
+              </TVButton>
+            )}
           </View>
         </Animated.View>
       </View>
@@ -322,7 +342,7 @@ const s = StyleSheet.create({
     position: 'absolute',
   },
 
-  // ── 顶部标题栏 ──
+  // ── 顶部标题栏（无黑底） ──
   titleBar: {
     position: 'absolute',
     top: 0,
@@ -330,11 +350,10 @@ const s = StyleSheet.create({
     right: 0,
     paddingHorizontal: 48,
     paddingVertical: 24,
-    backgroundColor: 'rgba(0,0,0,0.45)',
   },
   titleText: { textAlign: 'left' },
 
-  // ── 底部控制栏 ──
+  // ── 底部控制栏（无黑底，直接叠加在视频画面上） ──
   bottomBar: {
     position: 'absolute',
     left: 0,
@@ -344,7 +363,6 @@ const s = StyleSheet.create({
     paddingHorizontal: 120,
     paddingBottom: 16,
     paddingTop: 8,
-    backgroundColor: 'rgba(0,0,0,0.55)',
     justifyContent: 'flex-end',
   },
   seekBarHitArea: { width: '100%', paddingVertical: 8, paddingHorizontal: 2 },
@@ -357,6 +375,7 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     width: '100%',
     marginTop: 8,
+    gap: 32,
   },
   btn: {
     width: 72,
@@ -364,5 +383,8 @@ const s = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: 'rgba(255,255,255,0.12)',
+  },
+  btnActive: {
+    backgroundColor: 'rgba(77,175,124,0.35)',
   },
 })
