@@ -1,7 +1,7 @@
 {
-  "name": "lx-music-mobile",
-  "version": "1.0.1",
-  "versionCode": 101,
+  "name": "lumio",
+  "version": "1.0.4",
+  "versionCode": 104,
   "private": true,
   "scripts": {
     "dev": "react-native run-android --active-arch-only",
